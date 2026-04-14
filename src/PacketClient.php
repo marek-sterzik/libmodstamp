@@ -11,8 +11,7 @@ class PacketClient
     public function __construct(
         private Client $server,
         private PacketEncryptor $packetEncryptor,
-        private int $maxPacketSize = 1000,
-        private int $broadcastRepeat = 2,
+        private int $maxPacketSize = 1000
     ) {
     }
 
