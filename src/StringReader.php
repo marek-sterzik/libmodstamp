@@ -17,6 +17,11 @@ class StringReader
         return $this->currentOffset === $this->length;
     }
 
+    public function getRestOfString(): string
+    {
+        return substr($this->string, $this->currentOffset);
+    }
+
     public function readSingleMessage(): ?array
     {
         $descriptor = $this->readString(1);

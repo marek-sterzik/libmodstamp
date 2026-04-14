@@ -6,11 +6,40 @@ class Client
 {
     public static function fromData(array $data): Client
     {
-        return new self($data['host'], $data['port']);
+        return new self(
+            $data['host'],
+            $data['port'],
+            Permissions::tryFrom($data['perm']) ?? Permissions::None,
+            $data['enc'],
+        );
     }
 
-    public function __construct(private string $host, private int $port)
+    public function __construct(
+        private string $host,
+        private int $port,
+        private Permissions $permissions,
+        private string $encryptionInfo
+    ) {
+    }
+
+    public function getHost(): string
     {
+        return $this->host;
+    }
+
+    public function getPort(): int
+    {
+        return $this->port;
+    }
+
+    public function getPermissions(): Permissions
+    {
+        return $this->permissions;
+    }
+
+    public function getEncryptionInfo(): string
+    {
+        return $this->encryptionInfo;
     }
 
     public function getId(): string
@@ -23,6 +52,8 @@ class Client
         return [
             "host" => $this->host,
             "port" => $this->port,
+            "perm" => $this->permissions->value,
+            "enc" => $this->encryptionInfo,
         ];
     }
 }

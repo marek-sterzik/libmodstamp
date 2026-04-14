@@ -16,6 +16,7 @@ class MessageServer
         QueryModstamp::class => "queryModstamp",
         ChangeModstamp::class => "changeModstamp",
     ];
+
     public function __construct(private ServerCache $cache, private ServerStorage $storage)
     {
     }
@@ -29,16 +30,22 @@ class MessageServer
         return $this->$handler($client, $message, $broadcast);
     }
 
-    private function queryModstamp(Client $client, QueryModstamp $message, ?callable $broadcast = null): ReplyModstamp
+    private function queryModstamp(Client $client, QueryModstamp $message, ?callable $broadcast = null): ?ReplyModstamp
     {
+        if (!$client->getPermissions()->accessGranted()) {
+            return null;
+        }
         $modstamp = $message->getModstamp();
         $this->cache->assignClientToModstamp($client, $modstamp);
         $modstampValue = $this->queryModstampValue($modstamp);
         return new ReplyModstamp($modstamp, $modstampValue);
     }
 
-    private function changeModstamp(Client $client, ChangeModstamp $message, ?callable $broadcast = null): ModstampModified
+    private function changeModstamp(Client $client, ChangeModstamp $message, ?callable $broadcast = null): ?ModstampModified
     {
+        if (!$client->getPermissions()->writeAccessGranted()) {
+            return null;
+        }
         $modstamp = $message->getModstamp();
         $modstampValue = $message->getModstampValue();
         if ($this->updateModstampValue($modstamp, $modstampValue) && $broadcast !== null) {
