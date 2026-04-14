@@ -2,6 +2,8 @@
 
 namespace Sterzik\ModStamp;
 
+use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
+
 class Keyring
 {
     public function isConfigured(string $encryptorClass): bool

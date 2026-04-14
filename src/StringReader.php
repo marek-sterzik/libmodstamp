@@ -43,7 +43,7 @@ class StringReader
         return $message;
     }
 
-    private function readVarString(): ?string
+    public function readVarString(): ?string
     {
         $length = $this->readLength();
         if ($length === null) {
@@ -52,7 +52,7 @@ class StringReader
         return $this->readString($length);
     }
 
-    private function readLength(): ?int
+    public function readLength(): ?int
     {
         $char = $this->readString(1);
         if ($char === null) {
@@ -61,7 +61,7 @@ class StringReader
         return ord($char);
     }
 
-    private function readString(int $length): ?string
+    public function readString(int $length): ?string
     {
         if ($this->currentOffset + $length > $this->length) {
             return null;

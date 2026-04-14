@@ -9,6 +9,7 @@ use Sterzik\ModStamp\Message\QueryModstamp;
 use Sterzik\ModStamp\Message\ChangeModstamp;
 use Sterzik\ModStamp\Message\ReplyModstamp;
 use Sterzik\ModStamp\Message\ModstampModified;
+use Sterzik\ModStamp\Message\SignalModstamp;
 
 class MessageServer
 {

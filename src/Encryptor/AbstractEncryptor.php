@@ -1,16 +1,16 @@
 <?php
 
-namespace Sterzik\ModStamp\Encryptror;
+namespace Sterzik\ModStamp\Encryptor;
 
 use Sterzik\ModStamp\Permissions;
 use Sterzik\ModStamp\Keyring;
 
-class AbstractEncryptor
+abstract class AbstractEncryptor
 {
-    public static function getSignatures(): array;
-    public function encryptData(string $data, string $param): ?string;
-    public function decryptData(string $data, string $param): ?string;
-    public function getPacketHeaderSize(string $param): int;
+    abstract public static function getSignatures(): array;
+    abstract public function encryptData(string $data, string $param): ?string;
+    abstract public function decryptData(string $data, string $param): ?string;
+    abstract public function getPacketHeaderSize(string $param): int;
 
     public function __construct(private Keyring $keyring)
     {

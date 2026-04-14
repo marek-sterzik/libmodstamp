@@ -1,6 +1,6 @@
 <?php
 
-namespace Sterzik\ModStamp\Encryptror;
+namespace Sterzik\ModStamp\Encryptor;
 
 use Sterzik\ModStamp\Permissions;
 use Sterzik\ModStamp\Keyring;

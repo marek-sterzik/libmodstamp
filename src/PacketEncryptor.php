@@ -53,7 +53,7 @@ class PacketEncryptor
             return null;
         }
 
-        $encryptedData = $encryptedInfoHeader . $encryptedData;
+        $encryptedData = $encryptionInfoHeader . $encryptedData;
 
         return new EncryptedPacket($client->getHost(), $client->getPort(), $encryptedData);
     }
@@ -82,8 +82,8 @@ class PacketEncryptor
 
     public function getHeaderSizeForClient(Client $client): int
     {
-        $encryptionInfo = $client->getEncrptionInfo();
-        return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($encrptionInfo);
+        $encryptionInfo = $client->getEncryptionInfo();
+        return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($encryptionInfo);
     }
 
     private function decryptData(string $data, string $encryptionInfo): ?string
