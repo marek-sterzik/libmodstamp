@@ -7,6 +7,7 @@ use Exception;
 use Socket;
 use Sterzik\DI\DI;
 use Sterzik\ModStamp\Cache\RedisOperations;
+use Sterzik\ModStamp\Cache\ServerCache;
 use Sterzik\ModStamp\Storage\ServerStorage;
 
 class Server
@@ -38,7 +39,7 @@ class Server
         $processes = $this->serverConfig->getProcesses();
 
         if ($processes <= 1) {
-            $this->getRedisOperations()->clear();
+            $this->getServerCache()->clear();
             $this->runWorker($socket);
         } else {
             for ($i = 0; $i < $processes; $i++) {
@@ -51,7 +52,7 @@ class Server
                     break;
                 }
             }
-            $this->getRedisOperations()->clear();
+            $this->getServerCache()->clear();
         }
         for ($i = 0; $i < $processes; $i++) {
             pcntl_wait($status);
@@ -87,9 +88,9 @@ class Server
         return $this->di->get(PacketServer::class);
     }
 
-    private function getRedisOperations(): RedisOperations
+    private function getServerCache(): ServerCache
     {
-        return $this->di->get(RedisOperations::class);
+        return $this->di->get(ServerCache::class);
     }
 
     private function getDIConfig(): array
