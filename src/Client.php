@@ -2,58 +2,115 @@
 
 namespace Sterzik\ModStamp;
 
+use Exception;
+use Socket;
+use Sterzik\DI\DI;
+use Sterzik\ModStamp\Message\ChangeModstamp;
+use Sterzik\ModStamp\Message\ModstampModified;
+
+
 class Client
 {
-    public static function fromData(array $data): Client
+    private DI $di;
+
+    public function __construct(private ClientConfig $clientConfig)
     {
-        return new self(
-            $data['host'],
-            $data['port'],
-            Permissions::tryFrom($data['perm']) ?? Permissions::None,
-            $data['enc'],
-        );
+        $this->di = new DI($this->getDIConfig());
+        $this->di->setParameters([
+            "encryptionConfig" => $this->clientConfig->getEncryptionConfig(),
+            "maxPacketSize" => $this->clientConfig->getMaxPacketSize(),
+            "host" => $this->clientConfig->getHost(),
+            "port" => $this->clientConfig->getPort(),
+            "socketFamily" => $this->clientConfig->isIPv6() ? AF_INET6 : AF_INET,
+        ]);
     }
 
-    public function __construct(
-        private string $host,
-        private int $port,
-        private Permissions $permissions,
-        private string $encryptionInfo
-    ) {
-    }
-
-    public function getHost(): string
+    public function sendModstamps(array $modstamps, int $timeoutMs = 5000, int $resendIntervalMs = 100): array
     {
-        return $this->host;
+        $packetClient = $this->getPacketClient();
+        $socket = $this->getSocket();
+
+        $this->sendPackets($packetClient, $socket, $modstamps);
+
+        $overallTimer = new Timer();
+        $timer = new Timer();
+        $overallTimer->start($timeoutMs);
+        $timer->start($resendIntervalMs);
+        $confirmedModstamps = [];
+        while (!empty($modstamps) && !$overallTimer->reached()) {
+            while (!empty($modstamps)  && !$timer->reached() && !$overallTimer->reached()) {
+                $timeout = min($timer->getRemainingMiliseconds(), $overallTimer->getRemainingMiliseconds());
+                $packet = EncryptedPacket::readFromSocket($socket, $timeout);
+                if ($packet !== null) {
+                    $messages = $packetClient->packetToMessages($packet);
+                    foreach ($messages as $message) {
+                        if (!$message instanceof ModstampModified) {
+                            continue;
+                        }
+                        $key = $message->getModstamp()->getId();
+
+                        if (
+                            array_key_exists($key, $modstamps) &&
+                            $message->getModstampValue() === (string)$modstamps[$key]
+                        ) {
+                            unset($modstamps[$key]);
+                            $confirmedModstamps[$key] = $message->getModstampValue();
+                        }
+                    }
+                }
+            }
+            $this->sendPackets($packetClient, $socket, $modstamps);
+        }
+
+        return $confirmedModstamps;
     }
 
-    public function getPort(): int
+    public function sendPackets(PacketClient $packetClient, Socket $socket, array $modstamps): void
     {
-        return $this->port;
+        $messages = [];
+        foreach ($modstamps as $modstamp => $modstampValue) {
+            $modstamp = new Modstamp((string)$modstamp);
+            $modstampValue = (string)$modstampValue;
+            $messages[] = new ChangeModstamp($modstamp, $modstampValue);
+        }
+
+        $packets = $packetClient->messagesToPackets($messages);
+        foreach ($packets as $packet) {
+            for ($i = 0; $i < $this->clientConfig->getSendRepeat(); $i++) {
+                $packet->writeToSocket($socket);
+            }
+        }
     }
 
-    public function getPermissions(): Permissions
+    private function getPacketClient(): PacketClient
     {
-        return $this->permissions;
+        return $this->di->get(PacketClient::class);
     }
 
-    public function getEncryptionInfo(): string
+    private function getSocket(): Socket
     {
-        return $this->encryptionInfo;
+        return $this->di->get(Socket::class);
     }
 
-    public function getId(): string
-    {
-        return sprintf("%s:%d", $this->host, $this->port);
-    }
-
-    public function getData(): array
+    private function getDIConfig(): array
     {
         return [
-            "host" => $this->host,
-            "port" => $this->port,
-            "perm" => $this->permissions->value,
-            "enc" => $this->encryptionInfo,
+            Keyring::class => fn($builder) => $builder
+                ->setArguments($builder->parameter("encryptionConfig")),
+            PacketClient::class => fn($builder) => $builder
+                ->setArgument("maxPacketSize", $builder->parameter("maxPacketSize")),
+            Peer::class => fn($builder) => $builder
+                ->setArgument("host", $builder->parameter("host"))
+                ->setArgument("port", $builder->parameter("port"))
+                ->setArgument("permissions", Permissions::None)
+                ->setArgument("encryptionInfo", $builder->get(Keyring::class)->getDefaultEncryptionInfo()),
+            Socket::class => function ($builder) {
+                $socket = socket_create($builder->parameter("socketFamily"), SOCK_DGRAM, SOL_UDP);
+                if (!$socket) {
+                    throw new Exception("Cannot create socket");
+                }
+                return $socket;
+            }
         ];
     }
 }

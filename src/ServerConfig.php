@@ -85,6 +85,7 @@ class ServerConfig
     public function setModstampDatabaseFile(?string $file): self
     {
         $this->modstampDatabaseFile = $file;
+        return $this;
     }
 
     public function getModstampDatabaseFile(): string

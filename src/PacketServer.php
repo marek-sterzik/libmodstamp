@@ -26,23 +26,23 @@ class PacketServer
         if ($messages === null || empty($messages)) {
             return [];
         }
-        $client = $packet->getClient();
+        $peer = $packet->getPeer();
         $broadcastPackets = [];
-        $broadcast = function (Client $client, AbstractMessage $message) use (&$broadcastPackets) {
+        $broadcast = function (Peer $peer, AbstractMessage $message) use (&$broadcastPackets) {
             $encodedMessage = $message->encode();
             if ($encodedMessage !== null) {
                 for ($i = 0; $i < $this->broadcastRepeat; $i++) {
-                    $broadcastPackets[] = new DecryptedPacket($client, $encodedMessage);
+                    $broadcastPackets[] = new DecryptedPacket($peer, $encodedMessage);
                 }
             }
         };
 
-        $maxPacketSize = $this->maxPacketSize - $this->packetEncryptor->getHeaderSizeForClient($client);
+        $maxPacketSize = $this->maxPacketSize - $this->packetEncryptor->getHeaderSizeForPeer($peer);
         $replyPackets = [];
         $currentPacket = '';
 
         foreach ($messages as $message) {
-            $replyMessage = $this->messageServer->handleMessage($client, $message, $broadcast);
+            $replyMessage = $this->messageServer->handleMessage($peer, $message, $broadcast);
             if ($replyMessage !== null) {
                 $encodedMessage = $replyMessage->encode();
                 if ($encodedMessage !== null) {
@@ -57,8 +57,8 @@ class PacketServer
         if ($currentPacket !== '') {
             $replyPackets[] = $currentPacket;
         }
-        $replyPackets = array_map(function ($packetData) use ($client) {
-            return new DecryptedPacket($client, $packetData);
+        $replyPackets = array_map(function ($packetData) use ($peer) {
+            return new DecryptedPacket($peer, $packetData);
         }, $replyPackets);
 
         return array_map(function ($packet) {

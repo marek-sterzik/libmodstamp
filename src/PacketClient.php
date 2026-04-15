@@ -9,7 +9,7 @@ use Sterzik\modStamp\Message\AbstractMessage;
 class PacketClient
 {
     public function __construct(
-        private Client $server,
+        private Peer $server,
         private PacketEncryptor $packetEncryptor,
         private int $maxPacketSize = 1000
     ) {
@@ -17,7 +17,7 @@ class PacketClient
 
     public function messagesToPackets(array $messages): array
     {
-        $maxPacketSize = $this->maxPacketSize - $this->packetEncryptor->getHeaderSizeForClient($this->server);
+        $maxPacketSize = $this->maxPacketSize - $this->packetEncryptor->getHeaderSizeForPeer($this->server);
         $packets = [];
         $currentPacket = '';
 

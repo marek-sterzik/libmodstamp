@@ -5,7 +5,7 @@ namespace Sterzik\ModStamp\Cache;
 use Redis;
 use Exception;
 use Sterzik\ModStamp\Modstamp;
-use Sterzik\ModStamp\Client;
+use Sterzik\ModStamp\Peer;
 
 class ServerCache
 {
@@ -16,18 +16,18 @@ class ServerCache
     {
     }
 
-    public function getClientsForModstamp(Modstamp $modstamp): array
+    public function getPeersForModstamp(Modstamp $modstamp): array
     {
-        $clients = [];
-        foreach ($this->redis->listKeys($modstamp->getClientIdPrefix()) as $value) {
-            $clients[] = Client::fromData($value);
+        $peers = [];
+        foreach ($this->redis->listKeys($modstamp->getPeerIdPrefix()) as $value) {
+            $peers[] = Peer::fromData($value);
         }
-        return $clients;
+        return $peers;
     }
 
-    public function assignClientToModstamp(Client $client, Modstamp $modstamp): void
+    public function assignPeerToModstamp(Peer $peer, Modstamp $modstamp): void
     {
-        $this->redis->set($modstamp->getClientId($client), $client->getData(), self::EXPIRATION);
+        $this->redis->set($modstamp->getPeerId($peer), $peer->getData(), self::EXPIRATION);
     }
 
     public function getModstampValue(Modstamp $modstamp): ?string

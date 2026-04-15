@@ -22,37 +22,37 @@ class MessageServer
     {
     }
 
-    public function handleMessage(Client $client, AbstractMessage $message, ?callable $broadcast = null): ?AbstractMessage
+    public function handleMessage(Peer $peer, AbstractMessage $message, ?callable $broadcast = null): ?AbstractMessage
     {
         $handler = self::HANDLERS[get_class($message)] ?? null;
         if ($handler === null) {
             return null;
         }
-        return $this->$handler($client, $message, $broadcast);
+        return $this->$handler($peer, $message, $broadcast);
     }
 
-    private function queryModstamp(Client $client, QueryModstamp $message, ?callable $broadcast = null): ?ReplyModstamp
+    private function queryModstamp(Peer $peer, QueryModstamp $message, ?callable $broadcast = null): ?ReplyModstamp
     {
-        if (!$client->getPermissions()->accessGranted()) {
+        if (!$peer->getPermissions()->accessGranted()) {
             return null;
         }
         $modstamp = $message->getModstamp();
-        $this->cache->assignClientToModstamp($client, $modstamp);
+        $this->cache->assignPeerToModstamp($peer, $modstamp);
         $modstampValue = $this->queryModstampValue($modstamp);
         return new ReplyModstamp($modstamp, $modstampValue);
     }
 
-    private function changeModstamp(Client $client, ChangeModstamp $message, ?callable $broadcast = null): ?ModstampModified
+    private function changeModstamp(Peer $peer, ChangeModstamp $message, ?callable $broadcast = null): ?ModstampModified
     {
-        if (!$client->getPermissions()->writeAccessGranted()) {
+        if (!$peer->getPermissions()->writeAccessGranted()) {
             return null;
         }
         $modstamp = $message->getModstamp();
         $modstampValue = $message->getModstampValue();
         if ($this->updateModstampValue($modstamp, $modstampValue) && $broadcast !== null) {
             $signal = new SignalModstamp($modstamp, $modstampValue);
-            foreach ($this->cache->getClientsForModstamp($modstamp) as $client) {
-                $broadcast($client, $signal);
+            foreach ($this->cache->getPeersForModstamp($modstamp) as $peer) {
+                $broadcast($peer, $signal);
             }
         }
         return new ModstampModified($modstamp, $modstampValue);

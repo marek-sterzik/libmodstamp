@@ -8,7 +8,6 @@ use Socket;
 use Sterzik\DI\DI;
 use Sterzik\ModStamp\Cache\RedisOperations;
 use Sterzik\ModStamp\Storage\ServerStorage;
-use Sterzik\ModStamp\Keyring;
 
 class Server
 {
@@ -33,7 +32,7 @@ class Server
             throw new Exception("Cannot create socket");
         }
         if (!socket_bind($socket, $this->serverConfig->getListenIp(), $this->serverConfig->getListenPort())) {
-            die("Unable to bind to $server_side_sock");
+            throw new Exception("Unable to bind socket");
         }
 
         $processes = $this->serverConfig->getProcesses();

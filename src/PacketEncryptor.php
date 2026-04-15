@@ -39,8 +39,8 @@ class PacketEncryptor
 
     public function encryptPacket(DecryptedPacket $packet): ?EncryptedPacket
     {
-        $client = $packet->getClient();
-        $encryptionInfo = $client->getEncryptionInfo();
+        $peer = $packet->getPeer();
+        $encryptionInfo = $peer->getEncryptionInfo();
         if (strlen($encryptionInfo) > 255) {
             return null;
         }
@@ -55,7 +55,7 @@ class PacketEncryptor
 
         $encryptedData = $encryptionInfoHeader . $encryptedData;
 
-        return new EncryptedPacket($client->getHost(), $client->getPort(), $encryptedData);
+        return new EncryptedPacket($peer->getHost(), $peer->getPort(), $encryptedData);
     }
 
     public function decryptPacket(EncryptedPacket $packet): ?DecryptedPacket
@@ -75,14 +75,14 @@ class PacketEncryptor
 
         $permissions = $this->assignPermissions($encryptionInfo);
 
-        $client = new Client($packet->getClientHost(), $packet->getClientPort(), $permissions, $encryptionInfo);
+        $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptionInfo);
 
-        return new DecryptedPacket($client, $decryptedData);
+        return new DecryptedPacket($peer, $decryptedData);
     }
 
-    public function getHeaderSizeForClient(Client $client): int
+    public function getHeaderSizeForPeer(Peer $peer): int
     {
-        $encryptionInfo = $client->getEncryptionInfo();
+        $encryptionInfo = $peer->getEncryptionInfo();
         return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($encryptionInfo);
     }
 

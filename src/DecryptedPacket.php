@@ -4,13 +4,13 @@ namespace Sterzik\ModStamp;
 
 class DecryptedPacket
 {
-    public function __construct(private Client $client, private string $data)
+    public function __construct(private Peer $peer, private string $data)
     {
     }
 
-    public function getClient(): Client
+    public function getPeer(): Peer
     {
-        return $this->client;
+        return $this->peer;
     }
 
     public function getData(): string

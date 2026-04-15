@@ -19,4 +19,9 @@ class Keyring
     {
         return Permissions::ReadWrite;
     }
+
+    public function getDefaultEncryptionInfo(): string
+    {
+        return "";
+    }
 }
