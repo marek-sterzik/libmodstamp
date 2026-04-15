@@ -13,22 +13,29 @@ class PacketEncryptor
     public function encryptPacket(DecryptedPacket $packet): ?EncryptedPacket
     {
         $peer = $packet->getPeer();
-        $encryptionInfo = $peer->getEncryptionInfo();
+        $encryptorId = $peer->getEncryptorId();
+
+        $encryptor = $this->keyring->getEncryptor($encryptorId);
+
+        if ($encryptor === null) {
+            return null;
+        }
+
+        $encryptionInfo = $encryptor->getEncryptionInfo();
+
         if (strlen($encryptionInfo) > 255) {
             return null;
         }
 
         $encryptionInfoHeader = chr(strlen($encryptionInfo)) . $encryptionInfo;
 
-        $encryptedData = $this->encryptData($packet->getData(), $peer->getHost(), $encryptionInfo);
+        $encryptedData = $encryptor->encryptData($packet->getData());
 
         if ($encryptedData === null) {
             return null;
         }
 
-        $encryptedData = $encryptionInfoHeader . $encryptedData;
-
-        return new EncryptedPacket($peer->getHost(), $peer->getPort(), $encryptedData);
+        return new EncryptedPacket($peer->getHost(), $peer->getPort(), $encryptionInfoHeader . $encryptedData);
     }
 
     public function decryptPacket(EncryptedPacket $packet): ?DecryptedPacket
@@ -41,43 +48,34 @@ class PacketEncryptor
             return null;
         }
 
-        $decryptedData = $this->decryptData($reader->getRestOfString(), $peerHost, $encryptionInfo);
+        $encryptedData = $reader->getRestOfString();
 
-        if ($decryptedData === null) {
-            return null;
+        foreach ($this->keyring->matchEncryptors($peerHost, $encryptionInfo) as $encryptorId) {
+            $encryptor = $this->keyring->getEncryptor($encryptorId);
+            if ($encryptor === null) {
+                continue;
+            }
+            $decryptedData = $encryptor->decryptData($encryptedData);
+            if ($decryptedData === null) {
+                continue;
+            }
+            $permissions = $encryptor->getPermissions();
+            $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptorId);
+            return new DecryptedPacket($peer, $decryptedData);
         }
 
-        $permissions = $this->assignPermissions($packet->getPeerHost(), $encryptionInfo);
-
-        $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptionInfo);
-
-
-        return new DecryptedPacket($peer, $decryptedData);
+        return null;
     }
 
     public function getHeaderSizeForPeer(Peer $peer): int
     {
-        $encryptionInfo = $peer->getEncryptionInfo();
-        return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($peer->getHost(), $encryptionInfo);
-    }
+        $encryptor = $this->keyring->getEncryptor($peer->getEncryptorId());
+        if ($encryptor === null) {
+            return 0;
+        }
 
-    private function decryptData(string $data, string $peerHost, string $encryptionInfo): ?string
-    {
-        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->decryptData($data);
-    }
+        $encryptionInfo = $encryptor->getEncryptionInfo();
 
-    private function encryptData(string $data, string $peerHost, string $encryptionInfo): ?string
-    {
-        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->encryptData($data);
-    }
-
-    private function getHeaderSizeForEncryption(string $peerHost, string $encryptionInfo): int
-    {
-        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->getPacketHeaderSize() ?? 0;
-    }
-
-    private function assignPermissions(string $peerHost, string $encryptionInfo): Permissions
-    {
-        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->getPermissions() ?? Permissions::None;
+        return 1 + strlen($encryptionInfo) + $encryptor->getPacketHeaderSize();
     }
 }

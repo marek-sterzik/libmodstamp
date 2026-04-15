@@ -4,25 +4,20 @@ namespace Sterzik\ModStamp;
 
 use Exception;
 use Socket;
-use Sterzik\DI\DI;
 use Sterzik\ModStamp\Message\ChangeModstamp;
+use Sterzik\ModStamp\Message\QueryModstamp;
 use Sterzik\ModStamp\Message\ModstampModified;
+use Sterzik\ModStamp\Message\ReplyModstamp;
+use Sterzik\ModStamp\Message\SignalModstamp;
 
 
 class Client
 {
-    private DI $di;
+    private ?Socket $socket = null;
+    private ?PacketClient $packetClient = null;
 
     public function __construct(private ClientConfig $clientConfig)
     {
-        $this->di = new DI($this->getDIConfig());
-        $this->di->setParameters([
-            "encryptionConfig" => $this->clientConfig->getEncryptionConfig(),
-            "maxPacketSize" => $this->clientConfig->getMaxPacketSize(),
-            "host" => $this->clientConfig->getHost(),
-            "port" => $this->clientConfig->getPort(),
-            "socketFamily" => $this->clientConfig->isIPv6() ? AF_INET6 : AF_INET,
-        ]);
     }
 
     public function sendModstamps(array $modstamps, int $timeoutMs = 5000, int $resendIntervalMs = 100): array
@@ -84,36 +79,33 @@ class Client
 
     private function getPacketClient(): PacketClient
     {
-        return $this->di->get(PacketClient::class);
+        $keyring = new Keyring($this->clientConfig->getEncryptionConfig());
+
+        if ($this->packetClient === null) {
+            $this->packetClient = new PacketClient(
+                new Peer(
+                    $this->clientConfig->getHost(),
+                    $this->clientConfig->getPort(),
+                    Permissions::None,
+                    $keyring->getClientEncryptorId($this->clientConfig->getHost())
+                ),
+                new PacketEncryptor(
+                    $keyring
+                ),
+                $this->clientConfig->getMaxPacketSize()
+            );
+        }
+        return $this->packetClient;
     }
 
     private function getSocket(): Socket
     {
-        return $this->di->get(Socket::class);
-    }
-
-    private function getDIConfig(): array
-    {
-        return [
-            Keyring::class => fn($builder) => $builder
-                ->setArguments($builder->parameter("encryptionConfig")),
-            PacketClient::class => fn($builder) => $builder
-                ->setArgument("maxPacketSize", $builder->parameter("maxPacketSize")),
-            Peer::class => fn($builder) => $builder
-                ->setArgument("host", $builder->parameter("host"))
-                ->setArgument("port", $builder->parameter("port"))
-                ->setArgument("permissions", Permissions::None)
-                ->setArgument(
-                    "encryptionInfo",
-                    $builder->get(Keyring::class)->getClientEncryptionInfo($builder->parameter("host"))
-                ),
-            Socket::class => function ($builder) {
-                $socket = socket_create($builder->parameter("socketFamily"), SOCK_DGRAM, SOL_UDP);
-                if (!$socket) {
-                    throw new Exception("Cannot create socket");
-                }
-                return $socket;
+        if ($this->socket === null) {
+            $this->socket = socket_create($this->clientConfig->isIPv6() ? AF_INET6 : AF_INET, SOCK_DGRAM, SOL_UDP);
+            if (!$this->socket) {
+                throw new Exception("Cannot create socket");
             }
-        ];
+        }
+        return $this->socket;
     }
 }

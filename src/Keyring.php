@@ -2,6 +2,7 @@
 
 namespace Sterzik\ModStamp;
 
+use Generator;
 use ReflectionClass;
 use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
 
@@ -50,18 +51,26 @@ class Keyring
         return $encryptors;
     }
 
-    public function getClientEncryptionInfo(string $peerHost): string
+    public function getClientEncryptorId(string $peerHost): ?int
     {
-        foreach ($this->encryptionConfig as $config) {
+        foreach ($this->encryptionConfig as $id => $config) {
             if (($config['hosts'] ?? null) !== null && !$this->matchHost($peerHost, $config['hosts'])) {
                 continue;
             }
-            return $config['encryptor']?->getEncryptionInfo($config['id'] ?? '');
+            return $id;
         }
+        return null;
     }
 
+    public function getEncryptor(?int $encryptorId): ?AbstractEncryptor
+    {
+        if ($encryptorId === null || !isset($this->encryptionConfig[$encryptorId])) {
+            return null;
+        }
+        return $this->encryptionConfig[$encryptorId]['encryptor'];
+    }
 
-    public function getEncryptor(string $peerHost, string $encryptionInfo): ?AbstractEncryptor
+    public function matchEncryptors(string $peerHost, string $encryptionInfo): Generator
     {
         if ($encryptionInfo === "") {
             $signature = "";
@@ -70,7 +79,7 @@ class Keyring
             $signature = substr($encryptionInfo, 0, 1);
             $param = substr($encryptionInfo, 1);
         }
-        foreach ($this->encryptionConfig as $config) {
+        foreach ($this->encryptionConfig as $id => $config) {
             if (!$config['encryptor']?->matchSignature($signature)) {
                 continue;
             }
@@ -80,9 +89,8 @@ class Keyring
             if (($config['hosts'] ?? null) !== null && !$this->matchHost($peerHost, $config['hosts'])) {
                 continue;
             }
-            return $config['encryptor'];
+            yield $id;
         }
-        return null;
     }
 
     private function matchHost(string $host, array $hosts): bool

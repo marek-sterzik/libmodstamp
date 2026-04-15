@@ -18,7 +18,7 @@ class Peer
         private string $host,
         private int $port,
         private Permissions $permissions,
-        private string $encryptionInfo
+        private ?int $encryptorId
     ) {
     }
 
@@ -37,9 +37,9 @@ class Peer
         return $this->permissions;
     }
 
-    public function getEncryptionInfo(): string
+    public function getEncryptorId(): ?int
     {
-        return $this->encryptionInfo;
+        return $this->encryptorId;
     }
 
     public function getId(): string
@@ -53,7 +53,7 @@ class Peer
             "host" => $this->host,
             "port" => $this->port,
             "perm" => $this->permissions->value,
-            "enc" => $this->encryptionInfo,
+            "enc" => $this->encryptorId,
         ];
     }
 }

@@ -29,8 +29,9 @@ abstract class AbstractEncryptor
         return false;
     }
 
-    public function getEncryptionInfo(string $param): string
+    public function getEncryptionInfo(): string
     {
+        $param = $this->config['id'] ?? '';
         $foundSignature = null;
         $foundEmpty = false;
         foreach (static::getSignatures() as $signature) {
@@ -39,17 +40,6 @@ abstract class AbstractEncryptor
             }
         }
         throw new Exception("Cannot generate encryption info (a bug occured?)");
-    }
-
-
-    public function setup(string $peerHost, string $param): self
-    {
-        return $this;
-    }
-
-    protected function getKeyring(): Keyring
-    {
-        return $this->keyring;
     }
 
     public function getPermissions(): Permissions
