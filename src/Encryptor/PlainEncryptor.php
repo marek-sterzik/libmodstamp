@@ -12,17 +12,17 @@ class PlainEncryptor extends AbstractEncryptor
         return ['', 'p'];
     }
 
-    public function encryptData(string $data, string $param): ?string
+    public function encryptData(string $data): ?string
     {
         return $data;
     }
 
-    public function decryptData(string $data, string $param): ?string
+    public function decryptData(string $data): ?string
     {
         return $data;
     }
 
-    public function getPacketHeaderSize(string $param): int
+    public function getPacketHeaderSize(): int
     {
         return 0;
     }

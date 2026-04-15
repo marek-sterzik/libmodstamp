@@ -47,7 +47,7 @@ class PacketEncryptor
 
         $encryptionInfoHeader = chr(strlen($encryptionInfo)) . $encryptionInfo;
 
-        $encryptedData = $this->encryptData($packet->getData(), $encryptionInfo);
+        $encryptedData = $this->encryptData($packet->getData(), $peer->getHost(), $encryptionInfo);
 
         if ($encryptedData === null) {
             return null;
@@ -60,6 +60,7 @@ class PacketEncryptor
 
     public function decryptPacket(EncryptedPacket $packet): ?DecryptedPacket
     {
+        $peerHost = $packet->getPeerHost();
         $data = $packet->getData();
         $reader = new StringReader($data);
         $encryptionInfo = $reader->readVarString();
@@ -67,15 +68,16 @@ class PacketEncryptor
             return null;
         }
 
-        $decryptedData = $this->decryptData($reader->getRestOfString(), $encryptionInfo);
+        $decryptedData = $this->decryptData($reader->getRestOfString(), $peerHost, $encryptionInfo);
 
         if ($decryptedData === null) {
             return null;
         }
 
-        $permissions = $this->assignPermissions($encryptionInfo);
-
+        $permissions = $this->assignPermissions($packet->getPeerHost(), $encryptionInfo);
+        
         $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptionInfo);
+
 
         return new DecryptedPacket($peer, $decryptedData);
     }
@@ -83,45 +85,38 @@ class PacketEncryptor
     public function getHeaderSizeForPeer(Peer $peer): int
     {
         $encryptionInfo = $peer->getEncryptionInfo();
-        return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($encryptionInfo);
+        return 1 + strlen($encryptionInfo) + $this->getHeaderSizeForEncryption($peer->getHost(), $encryptionInfo);
     }
 
-    private function decryptData(string $data, string $encryptionInfo): ?string
+    private function decryptData(string $data, string $peerHost, string $encryptionInfo): ?string
     {
-        $encryptionInfo = $this->parseEncryptionInfo($encryptionInfo);
-        return $encryptionInfo['encryptor']?->decryptData($data, $encryptionInfo['param']);
+        return $this->getEncryptor($peerHost, $encryptionInfo)?->decryptData($data);
     }
 
-    private function encryptData(string $data, string $encryptionInfo): ?string
+    private function encryptData(string $data, string $peerHost, string $encryptionInfo): ?string
     {
-        $encryptionInfo = $this->parseEncryptionInfo($encryptionInfo);
-        return $encryptionInfo['encryptor']?->encryptData($data, $encryptionInfo['param']);
+        return $this->getEncryptor($peerHost, $encryptionInfo)?->encryptData($data);
     }
 
-    private function getHeaderSizeForEncryption(string $encryptionInfo): int
+    private function getHeaderSizeForEncryption(string $peerHost, string $encryptionInfo): int
     {
-        $encryptionInfo = $this->parseEncryptionInfo($encryptionInfo);
-        return $encryptionInfo['encryptor']?->getPacketHeaderSize($encryptionInfo['param']) ?? 0;
+        return $this->getEncryptor($peerHost, $encryptionInfo)?->getPacketHeaderSize() ?? 0;
     }
 
-    private function assignPermissions(string $encryptionInfo): Permissions
+    private function assignPermissions(string $peerHost, string $encryptionInfo): Permissions
     {
-        $encryptionInfo = $this->parseEncryptionInfo($encryptionInfo);
-        return $encryptionInfo['encryptor']?->getPermissions($encryptionInfo['param']) ?? Permissions::None;
+        return $this->getEncryptor($peerHost, $encryptionInfo)?->getPermissions() ?? Permissions::None;
     }
 
-    private function parseEncryptionInfo(string $encryptionInfo): array
+    private function getEncryptor(string $peerHost, string $encryptionInfo): AbstractEncryptor
     {
         if ($encryptionInfo === "") {
-            return [
-                'encryptor' => $this->encryptors[""] ?? null,
-                "param" => ""
-            ];
+            $encryptor = $this->encryptors[""] ?? null;
+            $param = "";
         } else {
-            return [
-                "encryptor" => $this->encryptors[substr($encryptionInfo, 0, 1)] ?? null,
-                "param" => substr($encryptionInfo, 1)
-            ];
+            $encryptor = $this->encryptors[substr($encryptionInfo, 0, 1)];
+            $param = substr($encryptionInfo, 1);
         }
+        return $encryptor?->setup($peerHost, $param);
     }
 }

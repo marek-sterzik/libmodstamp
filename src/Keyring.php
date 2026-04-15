@@ -15,11 +15,6 @@ class Keyring
         return true;
     }
 
-    public function getPermissionsFor(AbstractEncryptor $encryptor, string $param): Permissions
-    {
-        return Permissions::ReadWrite;
-    }
-
     public function getDefaultEncryptionInfo(): string
     {
         return "";
