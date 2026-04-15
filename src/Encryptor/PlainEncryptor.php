@@ -12,6 +12,11 @@ class PlainEncryptor extends AbstractEncryptor
         return ['', 'p'];
     }
 
+    public static function getIdentifier(): string
+    {
+        return "plain";
+    }
+
     public function encryptData(string $data): ?string
     {
         return $data;
@@ -25,5 +30,10 @@ class PlainEncryptor extends AbstractEncryptor
     public function getPacketHeaderSize(): int
     {
         return 0;
+    }
+
+    public function isProtected(): bool
+    {
+        return false;
     }
 }

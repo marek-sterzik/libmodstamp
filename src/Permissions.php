@@ -4,9 +4,9 @@ namespace Sterzik\ModStamp;
 
 enum Permissions: string
 {
-    case None = 'N';
-    case Read = 'R';
-    case ReadWrite = 'W';
+    case None = 'none';
+    case Read = 'ro';
+    case ReadWrite = 'rw';
 
     public function accessGranted(): bool
     {

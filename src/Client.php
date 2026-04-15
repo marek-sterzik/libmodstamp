@@ -103,7 +103,10 @@ class Client
                 ->setArgument("host", $builder->parameter("host"))
                 ->setArgument("port", $builder->parameter("port"))
                 ->setArgument("permissions", Permissions::None)
-                ->setArgument("encryptionInfo", $builder->get(Keyring::class)->getDefaultEncryptionInfo()),
+                ->setArgument(
+                    "encryptionInfo",
+                    $builder->get(Keyring::class)->getClientEncryptionInfo($builder->parameter("host"))
+                ),
             Socket::class => function ($builder) {
                 $socket = socket_create($builder->parameter("socketFamily"), SOCK_DGRAM, SOL_UDP);
                 if (!$socket) {

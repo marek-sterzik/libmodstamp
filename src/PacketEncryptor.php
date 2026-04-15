@@ -2,39 +2,12 @@
 
 namespace Sterzik\ModStamp;
 
-use ReflectionClass;
 use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
 
 class PacketEncryptor
 {
-    private array $encryptors = [];
-
-    public function __construct(Keyring $keyring)
+    public function __construct(private Keyring $keyring)
     {
-        foreach ($this->listEncryptors() as $class) {
-            if ($keyring->isConfigured($class)) {
-                $encryptor = new $class($keyring);
-                foreach ($class::getSignatures() as $signature) {
-                    $this->encryptors[$signature] = $encryptor;
-                }
-            }
-        }
-    }
-
-    private function listEncryptors(): array
-    {
-        $encryptors = [];
-        foreach (glob(__DIR__ . "/Encryptor/*.php") as $file) {
-            $class = "Sterzik\\ModStamp\\Encryptor\\" . basename($file, ".php");
-            if (class_exists($class) && is_a($class, AbstractEncryptor::class, true)) {
-                $rc = new ReflectionClass($class);
-                if ($rc->isAbstract()) {
-                    continue;
-                }
-                $encryptors[] = $class;
-            }
-        }
-        return $encryptors;
     }
 
     public function encryptPacket(DecryptedPacket $packet): ?EncryptedPacket
@@ -75,7 +48,7 @@ class PacketEncryptor
         }
 
         $permissions = $this->assignPermissions($packet->getPeerHost(), $encryptionInfo);
-        
+
         $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptionInfo);
 
 
@@ -90,33 +63,21 @@ class PacketEncryptor
 
     private function decryptData(string $data, string $peerHost, string $encryptionInfo): ?string
     {
-        return $this->getEncryptor($peerHost, $encryptionInfo)?->decryptData($data);
+        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->decryptData($data);
     }
 
     private function encryptData(string $data, string $peerHost, string $encryptionInfo): ?string
     {
-        return $this->getEncryptor($peerHost, $encryptionInfo)?->encryptData($data);
+        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->encryptData($data);
     }
 
     private function getHeaderSizeForEncryption(string $peerHost, string $encryptionInfo): int
     {
-        return $this->getEncryptor($peerHost, $encryptionInfo)?->getPacketHeaderSize() ?? 0;
+        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->getPacketHeaderSize() ?? 0;
     }
 
     private function assignPermissions(string $peerHost, string $encryptionInfo): Permissions
     {
-        return $this->getEncryptor($peerHost, $encryptionInfo)?->getPermissions() ?? Permissions::None;
-    }
-
-    private function getEncryptor(string $peerHost, string $encryptionInfo): AbstractEncryptor
-    {
-        if ($encryptionInfo === "") {
-            $encryptor = $this->encryptors[""] ?? null;
-            $param = "";
-        } else {
-            $encryptor = $this->encryptors[substr($encryptionInfo, 0, 1)];
-            $param = substr($encryptionInfo, 1);
-        }
-        return $encryptor?->setup($peerHost, $param);
+        return $this->keyring->getEncryptor($peerHost, $encryptionInfo)?->getPermissions() ?? Permissions::None;
     }
 }
