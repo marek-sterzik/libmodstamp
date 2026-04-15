@@ -10,7 +10,6 @@ use Sterzik\ModStamp\Message\ModstampModified;
 use Sterzik\ModStamp\Message\ReplyModstamp;
 use Sterzik\ModStamp\Message\SignalModstamp;
 
-
 class Client
 {
     private ?Socket $socket = null;
@@ -20,55 +19,134 @@ class Client
     {
     }
 
-    public function sendModstamps(array $modstamps, int $timeoutMs = 5000, int $resendIntervalMs = 100): array
+    public function sendModstamps(array $modstamps): array
+    {
+        $confirmedModstamps = [];
+
+        $sender = function () use (&$modstamps) {
+            $messages = [];
+            foreach ($modstamps as $modstamp => $modstampValue) {
+                $modstamp = new Modstamp((string)$modstamp);
+                $modstampValue = (string)$modstampValue;
+                $messages[] = new ChangeModstamp($modstamp, $modstampValue);
+            }
+            return $messages;
+        };
+
+        $receiver = function ($message) use (&$modstamps, &$confirmedModstamps) {
+            if (!$message instanceof ModstampModified) {
+                return false;
+            }
+
+            $key = $message->getModstamp()->getId();
+
+            if (
+                array_key_exists($key, $modstamps) &&
+                $message->getModstampValue() === (string)$modstamps[$key]
+            ) {
+                unset($modstamps[$key]);
+                $confirmedModstamps[$key] = $message->getModstampValue();
+            }
+
+            return empty($modstamps);
+        };
+
+        $this->request($sender, $receiver);
+
+        return $confirmedModstamps;
+    }
+
+    public function listenForChange(array $modstamps, callable $changeCallback): void
+    {
+        $unconfirmedModstamps = [];
+
+        $sender = function () use (&$unconfirmedModstamps) {
+            $messages = [];
+            foreach (array_keys($unconfirmedModstamps) as $modstamp) {
+                $modstamp = new Modstamp((string)$modstamp);
+                $messages[] = new QueryModstamp($modstamp);
+            }
+            return $messages;
+        };
+
+        $receiver = function ($message) use (&$modstamps, &$unconfirmedModstamps, $changeCallback) {
+            if (!$message instanceof ReplyModstamp && !$message instanceof SignalModstamp) {
+                return false;
+            }
+            $modstamp = $message->getModstamp()->getId();
+            $ret = false;
+            if (array_key_exists($modstamp, $modstamps)) {
+                $modstampValue = $message->getModstampValue();
+                $notify = false;
+                if ($modstamps[$modstamp] !== null && $modstamps[$modstamp] !== $modstampValue) {
+                    $notify = true;
+                }
+                $modstamps[$modstamp] = $modstampValue ?? '';
+                if ($message instanceof ReplyModstamp) {
+                    unset($unconfirmedModstamps[$modstamp]);
+                }
+                if (empty($unconfirmedModstamps)) {
+                    $ret = true;
+                }
+                if ($notify) {
+                    $changeCallback($modstamp, $modstampValue);
+                }
+            }
+            return $ret;
+        };
+
+        $timer = new Timer();
+        $packetClient = $this->getPacketClient();
+        $socket = $this->getSocket();
+
+        while (true) {
+            $timer->startSec($this->clientConfig->getQueryIntervalSec());
+            $unconfirmedModstamps = array_fill_keys(array_keys($modstamps), true);
+            $this->request($sender, $receiver);
+            while (!$timer->reached()) {
+                $packet = EncryptedPacket::readFromSocket($socket, $timer->getRemainingMiliseconds());
+                if ($packet !== null) {
+                    $messages = $packetClient->packetToMessages($packet);
+                    foreach ($messages as $message) {
+                        $receiver($message);
+                    }
+                }
+            }
+        }
+    }
+
+    private function request(callable $sender, callable $receiver): void
     {
         $packetClient = $this->getPacketClient();
         $socket = $this->getSocket();
 
-        $this->sendPackets($packetClient, $socket, $modstamps);
+        $this->sendPackets($packetClient, $socket, $sender);
 
         $overallTimer = new Timer();
         $timer = new Timer();
-        $overallTimer->start($timeoutMs);
-        $timer->start($resendIntervalMs);
+        $overallTimer->start($this->clientConfig->getRequestTimeoutMs());
+        $timer->start($this->clientConfig->getResendTimeoutMs());
         $confirmedModstamps = [];
-        while (!empty($modstamps) && !$overallTimer->reached()) {
-            while (!empty($modstamps)  && !$timer->reached() && !$overallTimer->reached()) {
+        while (!$overallTimer->reached()) {
+            while (!$timer->reached() && !$overallTimer->reached()) {
                 $timeout = min($timer->getRemainingMiliseconds(), $overallTimer->getRemainingMiliseconds());
                 $packet = EncryptedPacket::readFromSocket($socket, $timeout);
                 if ($packet !== null) {
                     $messages = $packetClient->packetToMessages($packet);
                     foreach ($messages as $message) {
-                        if (!$message instanceof ModstampModified) {
-                            continue;
-                        }
-                        $key = $message->getModstamp()->getId();
-
-                        if (
-                            array_key_exists($key, $modstamps) &&
-                            $message->getModstampValue() === (string)$modstamps[$key]
-                        ) {
-                            unset($modstamps[$key]);
-                            $confirmedModstamps[$key] = $message->getModstampValue();
+                        if ($receiver($message)) {
+                            return;
                         }
                     }
                 }
             }
-            $this->sendPackets($packetClient, $socket, $modstamps);
+            $this->sendPackets($packetClient, $socket, $sender);
         }
-
-        return $confirmedModstamps;
     }
 
-    public function sendPackets(PacketClient $packetClient, Socket $socket, array $modstamps): void
+    private function sendPackets(PacketClient $packetClient, Socket $socket, callable $sender): void
     {
-        $messages = [];
-        foreach ($modstamps as $modstamp => $modstampValue) {
-            $modstamp = new Modstamp((string)$modstamp);
-            $modstampValue = (string)$modstampValue;
-            $messages[] = new ChangeModstamp($modstamp, $modstampValue);
-        }
-
+        $messages = $sender();
         $packets = $packetClient->messagesToPackets($messages);
         foreach ($packets as $packet) {
             for ($i = 0; $i < $this->clientConfig->getSendRepeat(); $i++) {

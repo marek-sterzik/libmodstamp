@@ -12,6 +12,14 @@ class ClientConfig
 
     private int $sendRepeat = 1;
 
+    private int $resendTimeoutMs = 100;
+
+    private int $requestTimeoutMs = 5000;
+
+    private int $queryIntervalSec = 59;
+
+    private int $queryIntervalSecVariance = 2;
+
     private ?array $encryptionConfig = null;
 
     public function __construct(private string $host)
@@ -78,6 +86,40 @@ class ClientConfig
     public function getSendRepeat(): int
     {
         return $this->sendRepeat;
+    }
+
+    public function setResendTimeoutMs(int $resendTimeoutMs): self
+    {
+        $this->resendTimeoutMs = $resendTimeoutMs;
+        return $this;
+    }
+
+    public function getResendTimeoutMs(): int
+    {
+        return $this->resendTimeoutMs;
+    }
+
+    public function setRequestTimeoutMs(int $requestTimeoutMs): self
+    {
+        $this->requestTimeoutMs = $requestTimeoutMs;
+        return $this;
+    }
+
+    public function getRequestTimeoutMs(): int
+    {
+        return $this->requestTimeoutMs;
+    }
+
+    public function setQueryIntervalSec(int $queryIntervalSec, int $varianceSec = 0): self
+    {
+        $this->queryIntervalSec = $queryIntervalSec;
+        $this->queryIntervalSecVariance = $varianceSec;
+        return $this;
+    }
+
+    public function getQueryIntervalSec(): int
+    {
+        return $this->queryIntervalSec + rand(0, $this->queryIntervalSecVariance);
     }
 
     public function getEncryptionConfig(): array

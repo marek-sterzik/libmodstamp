@@ -9,11 +9,11 @@ use Sterzik\ModStamp\Peer;
 
 class ServerCache
 {
-    const EXPIRATION = 10;
-    const VALUE_EXPIRATION = 10;
-
-    public function __construct(private RedisOperations $redis)
-    {
+    public function __construct(
+        private RedisOperations $redis,
+        private int $expirationSec = 300,
+        private int $valueExpirationSec = 300
+    ) {
     }
 
     public function getPeersForModstamp(Modstamp $modstamp): array
@@ -27,18 +27,18 @@ class ServerCache
 
     public function assignPeerToModstamp(Peer $peer, Modstamp $modstamp): void
     {
-        $this->redis->set($modstamp->getPeerId($peer), $peer->getData(), self::EXPIRATION);
+        $this->redis->set($modstamp->getPeerId($peer), $peer->getData(), $this->expirationSec);
     }
 
     public function getModstampValue(Modstamp $modstamp): ?string
     {
-        $data = $this->redis->get($modstamp->getValueId(), self::VALUE_EXPIRATION);
+        $data = $this->redis->get($modstamp->getValueId(), $this->valueExpirationSec);
         return $data['m'] ?? null;
     }
 
     public function setModstampValue(Modstamp $modstamp, ?string $value): void
     {
-        $this->redis->set($modstamp->getValueId(), isset($value) ? ['m' => $value] : null, self::VALUE_EXPIRATION);
+        $this->redis->set($modstamp->getValueId(), isset($value) ? ['m' => $value] : null, $this->valueExpirationSec);
     }
 
     public function clear()

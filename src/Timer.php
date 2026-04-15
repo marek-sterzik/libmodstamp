@@ -21,6 +21,16 @@ class Timer
         return $this;
     }
 
+    public function startSec(int $seconds): self
+    {
+        $data = explode(" ", microtime());
+        $this->timeoutSeconds = (int)$data[1];
+        $this->timeoutMicroseconds = (int)$data[0];
+        $this->timeoutSeconds += $seconds;
+
+        return $this;
+    }
+
     public function getRemainingMiliseconds(): int
     {
         if ($this->timeoutMicroseconds === null || $this->timeoutSeconds === null) {
