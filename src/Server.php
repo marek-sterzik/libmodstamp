@@ -5,25 +5,16 @@ namespace Sterzik\ModStamp;
 use Throwable;
 use Exception;
 use Socket;
-use Sterzik\DI\DI;
 use Sterzik\ModStamp\Cache\RedisOperations;
 use Sterzik\ModStamp\Cache\ServerCache;
 use Sterzik\ModStamp\Storage\ServerStorage;
 
 class Server
 {
-    private DI $di;
+    private ?ServerCache $serverCache = null;
 
     public function __construct(private ServerConfig $serverConfig)
     {
-        $this->di = new DI($this->getDIConfig());
-        $this->di->setParameters([
-            "redisConfig" => $this->serverConfig->getRedisConfig(),
-            "modstampDbFile" => $this->serverConfig->getModstampDatabaseFile(),
-            "encryptionConfig" => $this->serverConfig->getEncryptionConfig(),
-            "maxPacketSize" => $this->serverConfig->getMaxPacketSize(),
-            "broadcastRepeat" => $this->serverConfig->getBroadcastRepeat(),
-        ]);
     }
 
     public function serve(): void
@@ -38,8 +29,11 @@ class Server
 
         $processes = $this->serverConfig->getProcesses();
 
+        $this->getServerCache()->clear();
+        if ($processes > 1) {
+            $this->forgetServerCache();
+        }
         if ($processes <= 1) {
-            $this->getServerCache()->clear();
             $this->runWorker($socket);
         } else {
             for ($i = 0; $i < $processes; $i++) {
@@ -52,7 +46,6 @@ class Server
                     break;
                 }
             }
-            $this->getServerCache()->clear();
         }
         for ($i = 0; $i < $processes; $i++) {
             pcntl_wait($status);
@@ -85,26 +78,29 @@ class Server
 
     private function createPacketServer(): PacketServer
     {
-        return $this->di->get(PacketServer::class);
+        return new PacketServer(
+            new MessageServer(
+                $this->getServerCache(),
+                new ServerStorage($this->serverConfig->getModstampDatabaseFile()),
+            ),
+            new PacketEncryptor(
+                new Keyring($this->serverConfig->getEncryptionConfig())
+            ),
+            $this->serverConfig->getMaxPacketSize(),
+            $this->serverConfig->getBroadcastRepeat()
+        );
     }
 
     private function getServerCache(): ServerCache
     {
-        return $this->di->get(ServerCache::class);
+        if ($this->serverCache === null) {
+            $this->serverCache = new ServerCache(new RedisOperations($this->serverConfig->getRedisConfig()));
+        }
+        return $this->serverCache;
     }
 
-    private function getDIConfig(): array
+    private function forgetSererCache(): self
     {
-        return [
-            RedisOperations::class => fn($builder) => $builder
-                ->setArguments($builder->parameter("redisConfig")),
-            ServerStorage::class => fn($builder) => $builder
-                ->setArguments($builder->parameter("modstampDbFile")),
-            Keyring::class => fn($builder) => $builder
-                ->setArguments($builder->parameter("encryptionConfig")),
-            PacketServer::class => fn($builder) => $builder
-                ->setArgument("maxPacketSize", $builder->parameter("maxPacketSize"))
-                ->setArgument("broadcastRepeat", $builder->parameter("broadcastRepeat"))
-        ];
+        $this->serverCache = null;
     }
 }

@@ -10,8 +10,7 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "php": ">=8.0",
-        "sterzik/di": ">=0.0.5"
+        "php": ">=8.0"
     },
     "autoload": {
         "psr-4": {
