@@ -20,10 +20,39 @@ class ClientConfig
 
     private int $queryIntervalSecVariance = 2;
 
-    private ?array $encryptionConfig = null;
+    private array $encryptionConfig = [];
 
     public function __construct(private string $host)
     {
+    }
+
+    public function configure(array $configuration): self
+    {
+        foreach ($configuration as $key => $value) {
+            if ($key === "host") {
+                continue;
+            }
+            if (isset($this->$key)) {
+                if (is_int($this->$key) && is_int($value)) {
+                    $this->$key = $value;
+                } elseif (is_bool($this->$key) && is_bool($this->$key)) {
+                    $this->$key = $value;
+                } elseif ($key === 'encryptionConfig' && is_array($value)) {
+                    foreach ($value as $encryption) {
+                        if (is_array($encryption)) {
+                            $this->putEncryption($encryption);
+                        }
+                    }
+                }
+            }
+        }
+        return $this;
+    }
+
+    public function putEncryption(array $encryption): self
+    {
+        $this->encryptionConfig[] = $encryption;
+        return $this;
     }
 
     public function setIPv4(): self
@@ -124,6 +153,6 @@ class ClientConfig
 
     public function getEncryptionConfig(): array
     {
-        return isset($this->encryptionConfig) ? [$this->encryptionConfig] : [];
+        return $this->encryptionConfig;
     }
 }
