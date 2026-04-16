@@ -118,7 +118,7 @@ $client2 = create_client(2);
 
 $clientSet = new ClientSet([$client1, $client2]);
 
-$confirmedModstamps = $clientSet-.sendModstamps(["test" => "abc"]);
+$confirmedModstamps = $clientSet->sendModstamps(["test" => "abc"]);
 
 // $confirmedModstamps contain an array of modstamp id-value pairs
 // confirmed by ALL inidividual clients
