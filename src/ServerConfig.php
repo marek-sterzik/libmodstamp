@@ -23,13 +23,13 @@ class ServerConfig
 
     public function setIPv4(): self
     {
-        $tihs->ipv6 = false;
+        $this->ipv6 = false;
         return $this;
     }
 
     public function setIPv6(): self
     {
-        $tihs->ipv6 = true;
+        $this->ipv6 = true;
         return $this;
     }
 
