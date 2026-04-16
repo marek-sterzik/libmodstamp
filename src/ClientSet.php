@@ -10,12 +10,31 @@ class ClientSet
 
     public function sendModstamps(array $modstamps): array
     {
-        foreach ($this->clients as $client) {
-            $modstamps = $client->sendModstamps($modstamps);
+        $confirmedModstamps = [];
+        
+        foreach ($this->clients as $i => $client) {
+            $confirmedModstamps[$i] = $client->sendModstamps($modstamps);
             if (empty($modstamps)) {
                 break;
             }
         }
-        return $modstamps;
+        
+        if (empty($confirmedModstamps)) {
+            return [];
+        }
+        
+        $finalModstamps = array_shift($confirmedModstamps);
+
+        while (!empty($confirmedModstamps)) {
+            $modstamps = array_shift($confirmedModstamps);
+            foreach (array_keys($modstamps) as $modstamp) {
+                if (!array_key_exists($modstamp, $finalModstamps)) {
+                    unset($modstamps[$modstamp]);
+                }
+                $finalmodstamps = $modstamps;
+            }
+        }
+
+        return $finalModstamps;
     }
 }
