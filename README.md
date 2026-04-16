@@ -72,7 +72,7 @@ $server->serve();
 
 ### client
 
-### common code for creating any client
+#### common code for creating any client
 
 ```php
 use Sterzik\ModStamp\Client;
@@ -82,7 +82,7 @@ $clientConfig = new ClientConfig("localhost");
 $client = new Client($clientConfig);
 ```
 
-### listening client
+#### listening client
 
 The following code is listening to modstamp with id `test`. The value `null` just means the initial modstamp. If set to null, it will not trigger the initial change.
 If set to any string modstamp value, the initial change will be triggered if the fetched modstamp value will differ from the one stored in the array.
@@ -94,7 +94,7 @@ $client->listenForChanges(["test" => null], function ($modstamp, $modstampValue)
 });
 ```
 
-### client pushing changes
+#### client pushing changes
 
 The following example will set the value of modstamp id `test` to `abc`:
 
@@ -105,3 +105,21 @@ $confirmedModstamps = $client->sendModstamps(["test" => "abc"]);
 // $confirmedModstamps contain an array of modstamp id-value pairs
 // which were confirmed by the server.
 ````
+
+#### client set
+
+A client set is intended to send modstamps into multiple servers:
+
+```php
+use Sterzik\ModStamp\ClientSet;
+
+$client1 = create_client(1);
+$client2 = create_client(2);
+
+$clientSet = new ClientSet([$client1, $client2]);
+
+$confirmedModstamps = $clientSet-.sendModstamps(["test" => "abc"]);
+
+// $confirmedModstamps contain an array of modstamp id-value pairs
+// confirmed by ALL inidividual clients
+```
