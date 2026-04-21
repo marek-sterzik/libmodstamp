@@ -11,7 +11,7 @@ class ServerConfig
     private int $maxPacketSize = 1300;
     private int $broadcastRepeat = 1;
 
-    private string $redisHost = "localhost";
+    private ?string $redisHost = null;
     private int $redisPort = 6379;
     private array $redisConfig = [];
 
@@ -115,6 +115,12 @@ class ServerConfig
         return $this->encryptionConfig;
     }
 
+    public function setMemoryCache(): self
+    {
+        $this->redisHost = null;
+        return $this;
+    }
+
     public function setRedisHost(string $redisHost): self
     {
         $this->redisHost = $redisHost;
@@ -133,9 +139,13 @@ class ServerConfig
         return $this;
     }
 
-    public function getRedisConfig(): array
+    public function getRedisConfig(): ?array
     {
-        return array_merge($this->redisConfig, ["host" => $this->redisHost, "port" => $this->redisPort]);
+        if ($this->redisHost === null) {
+            return null;
+        } else {
+            return array_merge($this->redisConfig, ["host" => $this->redisHost, "port" => $this->redisPort]);
+        }
     }
 }
 

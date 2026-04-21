@@ -7,6 +7,8 @@ use Exception;
 use Socket;
 use Sterzik\ModStamp\Cache\RedisOperations;
 use Sterzik\ModStamp\Cache\ServerCache;
+use Sterzik\ModStamp\Cache\ServerCacheRedis;
+use Sterzik\ModStamp\Cache\ServerCacheMemory;
 use Sterzik\ModStamp\Storage\ServerStorage;
 
 class Server
@@ -27,7 +29,18 @@ class Server
             throw new Exception("Unable to bind socket");
         }
 
+
         $processes = $this->serverConfig->getProcesses();
+        
+        $redisConfig = $this->serverConfig->getRedisConfig();
+        if ($redisConfig === null && $processes > 1) {
+            fprintf(
+                STDERR,
+                "Warning: cannot operate on multiple processes when redis is not configured," .
+                "falling back to 1 process\n"
+            );
+            $processes = 1;
+        }
 
         $this->getServerCache()->clear();
         if ($processes > 1) {
@@ -94,7 +107,13 @@ class Server
     private function getServerCache(): ServerCache
     {
         if ($this->serverCache === null) {
-            $this->serverCache = new ServerCache(new RedisOperations($this->serverConfig->getRedisConfig()));
+            $timeout = 300;
+            $redisConfig = $this->serverConfig->getRedisConfig();
+            if ($redisConfig !== null) {
+                $this->serverCache = new ServerCacheRedis(new RedisOperations($redisConfig), $timeout, $timeout);
+            } else {
+                $this->serverCache = new ServerCacheMemory($timeout, $timeout);
+            }
         }
         return $this->serverCache;
     }

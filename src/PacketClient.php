@@ -2,7 +2,6 @@
 
 namespace Sterzik\ModStamp;
 
-use Sterzik\ModStamp\Cache\ServerCache;
 use Sterzik\ModStamp\Storage\ServerStorage;
 use Sterzik\modStamp\Message\AbstractMessage;
 
