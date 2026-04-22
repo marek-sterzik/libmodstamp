@@ -98,7 +98,7 @@ class SecurityProfile
             foreach ($this->profiles as &$config) {
                 if (isset($config['hosts'])) {
                     $config['hosts'] = array_values(array_filter(
-                        array_map(fn($range) => IPLibFactory::parseRange($range), $config['hosts']),
+                        array_map(fn($range) => IPLibFactory::parseRangeString($range), $config['hosts']),
                         fn($range) => $range !== null
                     ));
                 }
