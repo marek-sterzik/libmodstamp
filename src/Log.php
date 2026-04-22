@@ -2,6 +2,8 @@
 
 namespace Sterzik\ModStamp;
 
+use DateTime;
+
 class Log
 {
     const ERR = "error";
