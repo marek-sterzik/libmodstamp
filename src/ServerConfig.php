@@ -18,8 +18,11 @@ class ServerConfig
     private ?string $modstampDatabaseFile = null;
 
     private ?int $processes = 1;
+
+    private int $cacheExpirationSec = 300;
     
     private array $encryptionConfig = [];
+
 
     public function setIPv4(): self
     {
@@ -146,6 +149,17 @@ class ServerConfig
         } else {
             return array_merge($this->redisConfig, ["host" => $this->redisHost, "port" => $this->redisPort]);
         }
+    }
+
+    public function getCacheExpirationSec(): int
+    {
+        return $this->cacheExprirationSec;
+    }
+
+    public function setCacheExpirationSec(int $cacheExpirationSec): self
+    {
+        $this->cacheExprirationSec = $cacheExpirationSec;
+        return $this;
     }
 }
 

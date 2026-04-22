@@ -107,7 +107,7 @@ class Server
     private function getServerCache(): ServerCache
     {
         if ($this->serverCache === null) {
-            $timeout = 300;
+            $timeout = $this->serverConfig->getCacheExpirationSec();
             $redisConfig = $this->serverConfig->getRedisConfig();
             if ($redisConfig !== null) {
                 $this->serverCache = new ServerCacheRedis(new RedisOperations($redisConfig), $timeout, $timeout);
