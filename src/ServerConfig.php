@@ -4,7 +4,7 @@ namespace Sterzik\ModStamp;
 
 class ServerConfig
 {
-    private bool $ipv6 = false;
+    private bool $ipv6 = true;
     private ?string $listenIp = null;
     private int $listenPort = 1415;
 
@@ -50,7 +50,7 @@ class ServerConfig
     }
 
     public function setListenPort(int $listenPort): self
-    {
+    s{
         $this->listenPort = $listenPort;
         return $this;
     }
