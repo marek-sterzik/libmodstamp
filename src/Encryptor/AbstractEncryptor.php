@@ -4,7 +4,6 @@ namespace Sterzik\ModStamp\Encryptor;
 
 use Exception;
 use Sterzik\ModStamp\Permissions;
-use Sterzik\ModStamp\Keyring;
 
 abstract class AbstractEncryptor
 {

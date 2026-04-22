@@ -157,19 +157,20 @@ class Client
 
     private function getPacketClient(): PacketClient
     {
-        $keyring = new Keyring($this->clientConfig->getEncryptionConfig());
-
+        $securityProfile = $this->clientConfig->getSecurityProfile();
+        $host = gethostbyname($this->clientConfig->getHost());
+        if (!filter_var($host, FILTER_VALIDATE_IP)) {
+            throw new Exception(sprintf("Cannot resolve hostname: %s", $this->clientConfig->getHost()));
+        }
         if ($this->packetClient === null) {
             $this->packetClient = new PacketClient(
                 new Peer(
-                    $this->clientConfig->getHost(),
+                    $host,
                     $this->clientConfig->getPort(),
                     Permissions::None,
-                    $keyring->getClientEncryptorId($this->clientConfig->getHost())
+                    $securityProfile->getClientEncryptorId($host)
                 ),
-                new PacketEncryptor(
-                    $keyring
-                ),
+                new PacketEncryptor($securityProfile),
                 $this->clientConfig->getMaxPacketSize()
             );
         }

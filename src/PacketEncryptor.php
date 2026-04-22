@@ -6,7 +6,7 @@ use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
 
 class PacketEncryptor
 {
-    public function __construct(private Keyring $keyring)
+    public function __construct(private SecurityProfile $securityProfile)
     {
     }
 
@@ -15,7 +15,7 @@ class PacketEncryptor
         $peer = $packet->getPeer();
         $encryptorId = $peer->getEncryptorId();
 
-        $encryptor = $this->keyring->getEncryptor($encryptorId);
+        $encryptor = $this->securityProfile->getEncryptor($encryptorId);
 
         if ($encryptor === null) {
             return null;
@@ -50,8 +50,8 @@ class PacketEncryptor
 
         $encryptedData = $reader->getRestOfString();
 
-        foreach ($this->keyring->matchEncryptors($peerHost, $encryptionInfo) as $encryptorId) {
-            $encryptor = $this->keyring->getEncryptor($encryptorId);
+        foreach ($this->securityProfile->matchEncryptors($peerHost, $encryptionInfo) as $encryptorId) {
+            $encryptor = $this->securityProfile->getEncryptor($encryptorId);
             if ($encryptor === null) {
                 continue;
             }
@@ -69,7 +69,7 @@ class PacketEncryptor
 
     public function getHeaderSizeForPeer(Peer $peer): int
     {
-        $encryptor = $this->keyring->getEncryptor($peer->getEncryptorId());
+        $encryptor = $this->securityProfile->getEncryptor($peer->getEncryptorId());
         if ($encryptor === null) {
             return 0;
         }

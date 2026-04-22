@@ -2,6 +2,8 @@
 
 namespace Sterzik\ModStamp;
 
+use Exception;
+
 class ClientConfig
 {
     private bool $ipv6 = true;
@@ -20,7 +22,7 @@ class ClientConfig
 
     private int $queryIntervalSecVariance = 2;
 
-    private array $encryptionConfig = [];
+    private ?SecurityProfile $securityProfile = null;
 
     public function __construct(private string $host)
     {
@@ -37,21 +39,15 @@ class ClientConfig
                     $this->$key = $value;
                 } elseif (is_bool($this->$key) && is_bool($this->$key)) {
                     $this->$key = $value;
-                } elseif ($key === 'encryptionConfig' && is_array($value)) {
-                    foreach ($value as $encryption) {
-                        if (is_array($encryption)) {
-                            $this->putEncryption($encryption);
-                        }
+                } elseif ($key === 'securityProfile' && is_array($value)) {
+                    try {
+                        $this->securityProfile = SecurityProfile::loadFromArray($value);
+                    } catch (Exception $e) {
+                        $this->securityProfile = SecurityProfile::loadDefault();
                     }
                 }
             }
         }
-        return $this;
-    }
-
-    public function putEncryption(array $encryption): self
-    {
-        $this->encryptionConfig[] = $encryption;
         return $this;
     }
 
@@ -153,8 +149,14 @@ class ClientConfig
         return $this->queryIntervalSec + rand(0, $this->queryIntervalSecVariance);
     }
 
-    public function getEncryptionConfig(): array
+    public function getSecurityProfile(): SecurityProfile
     {
-        return $this->encryptionConfig;
+        return $this->securityProfile ?? SecurityProfile::loadDefault();
+    }
+
+    public function setSecurityProfile(SecurityProfile $securityProfile): self
+    {
+        $this->securityProfile = $securityProfile;
+        return $this;
     }
 }

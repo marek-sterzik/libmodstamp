@@ -21,7 +21,7 @@ class ServerConfig
 
     private int $cacheExpirationSec = 300;
     
-    private array $encryptionConfig = [];
+    private ?SecurityProfile $securityProfile = null;
 
 
     public function setIPv4(): self
@@ -113,11 +113,6 @@ class ServerConfig
         return $this->processes ?? CPUCoreDetector::detectNumberOfCores();
     }
 
-    public function getEncryptionConfig(): array
-    {
-        return $this->encryptionConfig;
-    }
-
     public function setMemoryCache(): self
     {
         $this->redisHost = null;
@@ -161,5 +156,15 @@ class ServerConfig
         $this->cacheExprirationSec = $cacheExpirationSec;
         return $this;
     }
-}
 
+    public function getSecurityProfile(): SecurityProfile
+    {
+        return $this->securityProfile ?? SecurityProfile::loadDefault();
+    }
+
+    public function setSecurityProfile(SecurityProfile $securityProfile): self
+    {
+        $this->securityProfile = $securityProfile;
+        return $this;
+    }
+}

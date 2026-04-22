@@ -3,7 +3,6 @@
 namespace Sterzik\ModStamp\Encryptor;
 
 use Sterzik\ModStamp\Permissions;
-use Sterzik\ModStamp\Keyring;
 
 class PlainEncryptor extends AbstractEncryptor
 {

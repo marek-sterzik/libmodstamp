@@ -97,7 +97,7 @@ class Server
                 new ServerStorage($this->serverConfig->getModstampDatabaseFile()),
             ),
             new PacketEncryptor(
-                new Keyring($this->serverConfig->getEncryptionConfig())
+                $this->serverConfig->getSecurityProfile()
             ),
             $this->serverConfig->getMaxPacketSize(),
             $this->serverConfig->getBroadcastRepeat()

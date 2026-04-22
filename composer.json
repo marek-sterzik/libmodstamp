@@ -24,5 +24,9 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5"
+    },
+    "suggest": {
+        "symfony/yaml": "Allows to parse yaml based security profiles",
+        "mlocati/ip-lib": "Allows to make host matches against IP ranges"
     }
 }
