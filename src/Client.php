@@ -162,13 +162,16 @@ class Client
         if (!filter_var($host, FILTER_VALIDATE_IP)) {
             throw new Exception(sprintf("Cannot resolve hostname: %s", $this->clientConfig->getHost()));
         }
+        Log::log(Log::MSG, "using ip: %s", $host);
         if ($this->packetClient === null) {
+            $securityProfileId = $securityProfile->matchFirstForHost($host);
+            Log::log(Log::DBG, "matched security profile record: %s", $securityProfileId ?? 'none');
             $this->packetClient = new PacketClient(
                 new Peer(
                     $host,
                     $this->clientConfig->getPort(),
                     Permissions::None,
-                    $securityProfile->matchFirstForHost($host)
+                    $securityProfileId
                 ),
                 new PacketEncryptor($securityProfile),
                 $this->clientConfig->getMaxPacketSize()

@@ -92,6 +92,7 @@ class SecurityProfile
         }
 
         if (class_exists(Subnet::class) && class_exists(IPLibFactory::class)) {
+            Log::log(Log::DBG, "enabling extended ip-lib based host match");
             foreach ($this->profiles as &$config) {
                 if (isset($config['hosts'])) {
                     $config['hosts'] = array_values(array_filter(
@@ -99,6 +100,22 @@ class SecurityProfile
                         fn($range) => $range !== null
                     ));
                 }
+            }
+        }
+        if (Log::enabled(Log::DBG)) {
+            foreach ($this->profiles as $id => &$config) {
+                $hosts = "";
+                if (isset($config['hosts'])) {
+                    $hosts = sprintf("hosts=\"%s\"", implode(",", $config['hosts']));
+                }
+                Log::log(
+                    Log::DBG,
+                    "security profile: id=%d encryption=\"%s\" permission=\"%s\"%s",
+                    $id,
+                    $config['encryption'],
+                    $config['permission'] ?? 'none',
+                    $hosts
+                );
             }
         }
     }

@@ -34,11 +34,7 @@ class Server
         
         $redisConfig = $this->serverConfig->getRedisConfig();
         if ($redisConfig === null && $processes > 1) {
-            fprintf(
-                STDERR,
-                "Warning: cannot operate on multiple processes when redis is not configured," .
-                "falling back to 1 process\n"
-            );
+            Log::log(Log::WARN, "cannot operate on multiple processes when reids is not configured, falling back to 1 process");
             $processes = 1;
         }
 
