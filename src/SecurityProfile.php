@@ -7,7 +7,7 @@ use Exception;
 use ReflectionClass;
 use Symfony\Yaml\Yaml;
 use IPLib\Factory as IPLibFactory;
-use IPLib\Range\Subnet;
+use IPLib\Range\RangeInterface;
 use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
 
 class SecurityProfile
@@ -93,12 +93,12 @@ class SecurityProfile
             }
         }
 
-        if (class_exists(Subnet::class) && class_exists(IPLibFactory::class)) {
+        if (class_exists(IPLibFactory::class)) {
             Log::log(Log::DBG, "enabling extended ip-lib based host match");
             foreach ($this->profiles as &$config) {
                 if (isset($config['hosts'])) {
                     $config['hosts'] = array_values(array_filter(
-                        array_map(fn($range) => Subnet::parseString($range), $config['hosts']),
+                        array_map(fn($range) => IPLibFactory::parseRange($range), $config['hosts']),
                         fn($range) => $range !== null
                     ));
                 }
@@ -168,7 +168,7 @@ class SecurityProfile
     {
         $hostIpLib = null;
         foreach ($hosts as $h) {
-            if ($h instanceof Subnet) {
+            if ($h instanceof RangeInterface) {
                 if ($hostIpLib === null) {
                     $hostIpLib = IPLibFactory::parseAddressString($host);
                     if ($hostIpLib === null) {
