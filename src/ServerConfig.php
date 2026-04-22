@@ -50,7 +50,7 @@ class ServerConfig
     }
 
     public function setListenPort(int $listenPort): self
-    s{
+    {
         $this->listenPort = $listenPort;
         return $this;
     }
