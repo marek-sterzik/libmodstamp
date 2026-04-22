@@ -168,7 +168,7 @@ class Client
                     $host,
                     $this->clientConfig->getPort(),
                     Permissions::None,
-                    $securityProfile->getClientEncryptorId($host)
+                    $securityProfile->matchFirstForHost($host)
                 ),
                 new PacketEncryptor($securityProfile),
                 $this->clientConfig->getMaxPacketSize()
