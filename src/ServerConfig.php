@@ -153,7 +153,7 @@ class ServerConfig
 
     public function getCacheExpirationSec(): int
     {
-        return $this->cacheExprirationSec;
+        return $this->cacheExpirationSec;
     }
 
     public function setCacheExpirationSec(int $cacheExpirationSec): self
