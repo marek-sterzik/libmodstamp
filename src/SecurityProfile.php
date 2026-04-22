@@ -108,7 +108,7 @@ class SecurityProfile
             foreach ($this->profiles as $id => &$config) {
                 $hosts = "";
                 if (isset($config['hosts'])) {
-                    $hosts = sprintf("hosts=\"%s\"", implode(",", $config['hosts']));
+                    $hosts = sprintf(" hosts=\"%s\"", implode(",", $config['hosts']));
                 }
                 Log::log(
                     Log::DBG,
