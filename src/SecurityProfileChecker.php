@@ -4,7 +4,7 @@ namespace Sterzik\ModStamp;
 
 use Exception;
 
-class SecurityProfile
+class SecurityProfileChecker
 {
     public static function checkSecurityProfile(array $config): array
     {
