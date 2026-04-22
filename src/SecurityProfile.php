@@ -103,6 +103,8 @@ class SecurityProfile
                     ));
                 }
             }
+        } else {
+            Log::log(Log::DBG, "disabling extended ip-lib based host match, mlocati/ip-lib not found");
         }
         if (Log::enabled(Log::DBG)) {
             foreach ($this->profiles as $id => &$config) {
