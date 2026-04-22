@@ -4,7 +4,7 @@ namespace Sterzik\ModStamp;
 
 class ClientConfig
 {
-    private bool $ipv6 = false;
+    private bool $ipv6 = true;
 
     private int $port = 1415;
 
@@ -139,10 +139,12 @@ class ClientConfig
         return $this->requestTimeoutMs;
     }
 
-    public function setQueryIntervalSec(int $queryIntervalSec, int $varianceSec = 0): self
+    public function setQueryIntervalSec(int $queryIntervalSec, ?int $varianceSec = null): self
     {
         $this->queryIntervalSec = $queryIntervalSec;
-        $this->queryIntervalSecVariance = $varianceSec;
+        if ($varianceSec !== null) {
+            $this->queryIntervalSecVariance = $varianceSec;
+        }
         return $this;
     }
 
