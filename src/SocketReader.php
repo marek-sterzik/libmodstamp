@@ -47,7 +47,7 @@ class SocketReader
         return $data;
     }
 
-    private static function parseTimeoutForSelect(?int $timeoutMillisecconds): array
+    private static function parseTimeoutForSelect(?int $timeoutMilliseconds): array
     {
         if ($timeoutMilliseconds === null) {
             return [null, 0];
