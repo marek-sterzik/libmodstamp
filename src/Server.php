@@ -22,10 +22,14 @@ class Server
     public function serve(): void
     {
         $socket = socket_create($this->serverConfig->isIPv6() ? AF_INET6 : AF_INET, SOCK_DGRAM, SOL_UDP);
+
         if (!$socket) {
             throw new Exception("Cannot create socket");
         }
-        if (!socket_bind($socket, $this->serverConfig->getListenIp(), $this->serverConfig->getListenPort())) {
+
+        $listenIp = $this->serverConfig->getListenIp();
+
+        if (!socket_bind($socket, ($listenIp === '') ? 0 : $listenIp, $this->serverConfig->getListenPort())) {
             throw new Exception("Unable to bind socket");
         }
 

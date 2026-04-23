@@ -49,7 +49,7 @@ class ServerConfig
 
     public function getListenIp(): string
     {
-        return $this->listenIp ?? ($this->ipv6 ? '::' : '0.0.0.0');
+        return $this->listenIp ?? ($this->ipv6 ? '' : '0.0.0.0');
     }
 
     public function setListenPort(int $listenPort): self
