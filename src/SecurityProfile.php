@@ -8,6 +8,7 @@ use ReflectionClass;
 use Symfony\Yaml\Yaml;
 use IPLib\Factory as IPLibFactory;
 use IPLib\Range\RangeInterface;
+use IPLib\Address\Type as AddressType;
 use Sterzik\ModStamp\Encryptor\AbstractEncryptor;
 
 class SecurityProfile
@@ -168,17 +169,26 @@ class SecurityProfile
 
     private function matchHost(string $host, array $hosts): bool
     {
-        $hostIpLib = null;
+        $hostIps = null;
         foreach ($hosts as $h) {
             if ($h instanceof RangeInterface) {
-                if ($hostIpLib === null) {
-                    $hostIpLib = IPLibFactory::parseAddressString($host);
-                    if ($hostIpLib === null) {
+                if ($hostIps === null) {
+                    $hostIp = IPLibFactory::parseAddressString($host);
+                    if ($hostIp === null) {
                         return false;
                     }
+                    $hostIps = [$hostIp];
+                    if ($hostIp->getAddressType() === AddressType::T_IPv6) {
+                        $hostIp = $hostIp->toIPv4();
+                        if ($hostIp !== null) {
+                            $hostIps[] = $hostIp;
+                        }
+                    }
                 }
-                if ($h->contains($hostIpLib)) {
-                    return true;
+                foreach ($hostIps as $hostIp) {
+                    if ($h->contains($hostIp)) {
+                        return true;
+                    }
                 }
             } else {
                 if ($host === $h) {
