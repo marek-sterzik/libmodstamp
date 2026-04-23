@@ -53,16 +53,20 @@ class PacketEncryptor
         foreach ($this->securityProfile->matchEncryptors($peerHost, $encryptionInfo) as $encryptorId) {
             $encryptor = $this->securityProfile->getEncryptor($encryptorId);
             if ($encryptor === null) {
+                Log::log(Log::DBG2, "not decrypting packet using profile with id=$encryptorId, cannot find encryptor");
                 continue;
             }
             $decryptedData = $encryptor->decryptData($encryptedData);
             if ($decryptedData === null) {
+                Log::log(Log::DBG2, "not decrypting packet using profile with id=$encryptorId, decryption failed");
                 continue;
             }
+            Log::log(Log::DBG, "packet decrypted using profile with id=$encryptorId");
             $permissions = $encryptor->getPermissions();
             $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptorId);
             return new DecryptedPacket($peer, $decryptedData);
         }
+        Log::log(Log::DBG, "not decrypting packet, no suitable encryptor found");
 
         return null;
     }

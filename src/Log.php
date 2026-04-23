@@ -10,12 +10,14 @@ class Log
     const WARN = "warning";
     const MSG = "message";
     const DBG = "debug";
+    const DBG2 = "debug2";
 
     const LEVELS = [
         self::ERR => 0,
         self::WARN => 1,
         self::MSG => 2,
         self::DBG => 3,
+        self::DBG2 => 4,
     ];
 
     static int $currentLevel = 1;
