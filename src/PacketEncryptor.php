@@ -15,6 +15,8 @@ class PacketEncryptor
         $peer = $packet->getPeer();
         $encryptorId = $peer->getEncryptorId();
 
+        Log::log(Log::DBG, "encrypting packet using profile with id=%d", $encryptorId);
+
         $encryptor = $this->securityProfile->getEncryptor($encryptorId);
 
         if ($encryptor === null) {
@@ -32,6 +34,7 @@ class PacketEncryptor
         $encryptedData = $encryptor->encryptData($packet->getData());
 
         if ($encryptedData === null) {
+            Log::log(Log::DBG, "encrypting packet failed");
             return null;
         }
 
@@ -53,15 +56,15 @@ class PacketEncryptor
         foreach ($this->securityProfile->matchEncryptors($peerHost, $encryptionInfo) as $encryptorId) {
             $encryptor = $this->securityProfile->getEncryptor($encryptorId);
             if ($encryptor === null) {
-                Log::log(Log::DBG2, "not decrypting packet using profile with id=$encryptorId, cannot find encryptor");
+                Log::log(Log::DBG2, "not decrypting packet using profile with id=%d, cannot find encryptor", $encryptorId);
                 continue;
             }
             $decryptedData = $encryptor->decryptData($encryptedData);
             if ($decryptedData === null) {
-                Log::log(Log::DBG2, "not decrypting packet using profile with id=$encryptorId, decryption failed");
+                Log::log(Log::DBG2, "not decrypting packet using profile with id=%d, decryption failed", $encryptorId);
                 continue;
             }
-            Log::log(Log::DBG, "packet decrypted using profile with id=$encryptorId");
+            Log::log(Log::DBG, "packet decrypted using profile with id=%d", $encryptorId);
             $permissions = $encryptor->getPermissions();
             $peer = new Peer($packet->getPeerHost(), $packet->getPeerPort(), $permissions, $encryptorId);
             return new DecryptedPacket($peer, $decryptedData);
