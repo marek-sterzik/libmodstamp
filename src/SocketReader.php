@@ -15,7 +15,7 @@ class SocketReader
         return $data;
     }
 
-    public static function readFromSocket(Socket $socket, ?int $timeoutMilliseconds): ?string
+    public static function readFromSocket(Socket $socket, ?int $timeoutMilliseconds): ?array
     {
         $data = self::readFromSockets([$socket], $timeoutMilliseconds) ?? [];
         return $data[0] ?? null;
