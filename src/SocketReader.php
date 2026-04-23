@@ -30,7 +30,7 @@ class SocketReader
             return null;
         }
         $data = [];
-        foreach ($sockets as $key => $value) {
+        foreach ($sockets as $key => $socket) {
             $from = '';
             $port = 0;
             $buf = '';
