@@ -36,6 +36,7 @@ class EncryptedPacket
 
     public function writeToSocket(Socket $socket): void
     {
+        Log::log(Log::DBG, "sent packet: to %s:%d length %dB", $this->peerHost, $this->peerPort, strlen($this->data));
         socket_sendto($socket, $this->data, strlen($this->data), 0, $this->peerHost, $this->peerPort);
     }
 }

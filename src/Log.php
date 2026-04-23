@@ -19,6 +19,11 @@ class Log
     ];
 
     static int $currentLevel = 1;
+    
+    public static function increaseLogLevel(int $logLevelDiff): void
+    {
+        static::$currentLevel += $logLevelDiff;
+    }
 
     public static function log(string $level, string $message, string ...$args): void
     {
@@ -26,6 +31,7 @@ class Log
             fprintf(STDERR, "%s %s: %s\n", (new DateTime())->format("c"), $level, sprintf($message, ...$args));
         }
     }
+
 
     public static function setLevel(string $level): void
     {

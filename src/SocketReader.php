@@ -40,6 +40,7 @@ class SocketReader
                     "port" => $port,
                     "buf" => $buf,
                 ];
+                Log::log(Log::DBG, "received packet: from %s:%d length %dB", $from, $port, strlen($buf));
             } else {
                 $data[$key] = null;
             }
