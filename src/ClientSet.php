@@ -11,13 +11,15 @@ class ClientSet
     public function sendModstamps(array $modstamps): array
     {
         $confirmedModstamps = [];
-        
+
+        $functions = [];
         foreach ($this->clients as $i => $client) {
-            $confirmedModstamps[$i] = $client->sendModstamps($modstamps);
-            if (empty($modstamps)) {
-                break;
-            }
+            $functions[] = function() use ($client) {
+                return $client->sendModstamps($modstamps);
+            };
         }
+
+        $confirmedModstamps = SocketReader::parallel(...$functions);
         
         if (empty($confirmedModstamps)) {
             return [];
@@ -31,7 +33,7 @@ class ClientSet
                 if (!array_key_exists($modstamp, $finalModstamps)) {
                     unset($modstamps[$modstamp]);
                 }
-                $finalmodstamps = $modstamps;
+                $finalModstamps = $modstamps;
             }
         }
 
