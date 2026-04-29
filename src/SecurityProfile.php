@@ -68,8 +68,8 @@ class SecurityProfile
     {
         if (static::$encryptors === null) {
             static::$encryptors = [];
-            foreach (glob(__DIR__ . "/Encryptor/*.php") as $file) {
-                $class = "Sterzik\\ModStamp\\Encryptor\\" . basename($file, ".php");
+            foreach ($this->listClassFiles(__DIR__ . '/Encryptor') as $file) {
+                $class = "Sterzik\\ModStamp\\Encryptor\\" . $file;
                 if (class_exists($class) && is_a($class, AbstractEncryptor::class, true)) {
                     $rc = new ReflectionClass($class);
                     if ($rc->isAbstract()) {
@@ -80,6 +80,22 @@ class SecurityProfile
             }
         }
         return static::$encryptors;
+    }
+
+    private function listClassFiles(string $dir): Generator
+    {
+        $dd = opendir($dir);
+        if ($dd) {
+            while ($file = readdir($dd)) {
+                if ($file === '.' || $file === '..') {
+                    continue;
+                }
+                if (preg_match('/\.php$/', $file)) {
+                    yield basename($file, ".php");
+                }
+            }
+            closedir($dd);
+        }
     }
 
     private function __construct(array $profiles)
