@@ -8,19 +8,19 @@ class SecurityProfileChecker
 {
     public static function checkSecurityProfile(array $config): array
     {
-        if (!$this->checkOrdinaryArray($config)) {
+        if (!self::checkOrdinaryArray($config)) {
             $config = $config['profiles'] ?? [];
-            if (!$this->checkOrdinaryArray($array)) {
+            if (!self::checkOrdinaryArray($array)) {
                 throw new Exception("profile list must be an array");
             }
         }
         foreach ($config as $id => &$profile) {
-            $this->checkProfile($id, $profile);
+            self::checkProfile($id, $profile);
         }
         return $config;
     }
 
-    private function checkProfile(int $id, array &$profile): void
+    private static function checkProfile(int $id, array &$profile): void
     {
         if (!isset($profile['encryption'])) {
             throw new Exception(sprintf("missing encryption in profile %d", $id));
@@ -53,7 +53,7 @@ class SecurityProfileChecker
             if (!is_array($profile['hosts'])) {
                 $profile['hosts'] = [$profile['hosts']];
             }
-            if (!$this->checkOrdinaryArray($profile['hosts'])) {
+            if (!self::checkOrdinaryArray($profile['hosts'])) {
                 throw new Exception(sprintf("invalid profile hosts in profile %d: array required", $id));
             }
             foreach ($profile['hosts'] as &$host) {
@@ -66,7 +66,7 @@ class SecurityProfileChecker
         }
     }
 
-    private function checkOrdinaryArray(array $array): bool
+    private static function checkOrdinaryArray(array $array): bool
     {
         $keys = array_keys($array);
         if ($keys === array_keys($keys)) {
