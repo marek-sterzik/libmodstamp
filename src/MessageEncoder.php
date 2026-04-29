@@ -86,19 +86,16 @@ class MessageEncoder
     {
         if (self::$messageMap === null) {
             self::$messageMap = [];
-            foreach (glob(__DIR__ . "/Message/*.php") as $file) {
-                $class = "Sterzik\\ModStamp\\Message\\" . basename($file, ".php");
-                if (class_exists($class)) {
-                    $rc = new ReflectionClass($class);
-                    if ($rc->isAbstract()) {
-                        continue;
-                    }
-                    
-                    self::$messageMap[$class::getDescriptor()] = [
-                        "class" => $class,
-                        "args" => self::buildArgs($rc),
-                    ];
+            foreach (ClassLister::listClasses('Sterzik\\ModStamp\\Message') as $class) {
+                $rc = new ReflectionClass($class);
+                if ($rc->isAbstract()) {
+                    continue;
                 }
+                
+                self::$messageMap[$class::getDescriptor()] = [
+                    "class" => $class,
+                    "args" => self::buildArgs($rc),
+                ];
             }
         }
     }
