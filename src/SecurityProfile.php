@@ -5,7 +5,7 @@ namespace Sterzik\ModStamp;
 use Generator;
 use Exception;
 use ReflectionClass;
-use Symfony\Yaml\Yaml;
+use Symfony\Component\Yaml\Yaml;
 use IPLib\Factory as IPLibFactory;
 use IPLib\Range\RangeInterface;
 use IPLib\Address\Type as AddressType;
