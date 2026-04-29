@@ -141,6 +141,7 @@ class Client
                 }
             }
             $this->sendPackets($packetClient, $socket, $sender);
+            $timer->start($this->clientConfig->getResendTimeoutMs());
         }
     }
 
