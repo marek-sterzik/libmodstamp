@@ -29,7 +29,7 @@ class Server
 
         $listenIp = $this->serverConfig->getListenIp();
 
-        if (!socket_bind($socket, ($listenIp === '') ? 0 : $listenIp, $this->serverConfig->getListenPort())) {
+        if (!socket_bind($socket, $listenIp, $this->serverConfig->getListenPort())) {
             throw new Exception("Unable to bind socket");
         }
 

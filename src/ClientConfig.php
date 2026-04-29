@@ -8,7 +8,9 @@ class ClientConfig
 {
     private bool $ipv6 = true;
 
-    private int $port = 1415;
+    private string $host;
+
+    private int $port;
 
     private int $maxPacketSize = 1300;
 
@@ -24,14 +26,20 @@ class ClientConfig
 
     private ?SecurityProfile $securityProfile = null;
 
-    public function __construct(private string $host)
+    public function __construct(string $host)
     {
+        $parsed = HostPort::parse($host, 1415);
+        if ($parsed === null) {
+            throw new Exception(sprintf("Cannot parse host: %s", $host));
+        }
+        $this->host = $parsed['host'];
+        $this->port = $parsed['port'];
     }
 
     public function configure(array $configuration): self
     {
         foreach ($configuration as $key => $value) {
-            if ($key === "host") {
+            if ($key === 'host' || $key === 'port') {
                 continue;
             }
             if (isset($this->$key)) {
