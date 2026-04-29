@@ -21,7 +21,7 @@ class Server
 
     public function serve(): void
     {
-        $socket = socket_create($this->serverConfig->isIPv6() ? AF_INET6 : AF_INET, SOCK_DGRAM, SOL_UDP);
+        $socket = @socket_create($this->serverConfig->isIPv6() ? AF_INET6 : AF_INET, SOCK_DGRAM, SOL_UDP);
 
         if (!$socket) {
             throw new Exception("Cannot create socket");
@@ -29,7 +29,7 @@ class Server
 
         $listenIp = $this->serverConfig->getListenIp();
 
-        if (!socket_bind($socket, $listenIp, $this->serverConfig->getListenPort())) {
+        if (!@socket_bind($socket, $listenIp, $this->serverConfig->getListenPort())) {
             throw new Exception("Unable to bind socket");
         }
 
