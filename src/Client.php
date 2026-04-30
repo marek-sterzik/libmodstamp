@@ -62,6 +62,12 @@ class Client
 
         $run = true;
 
+        $noResponseTimer = new Timer();
+        $timer = new Timer();
+        $packetClient = $this->getPacketClient();
+        $socket = $this->getSocket();
+        $this->setupNoResponseTimer($noResponseTimer);
+
         $sender = function () use (&$unconfirmedModstamps) {
             $messages = [];
             foreach (array_keys($unconfirmedModstamps) as $modstamp) {
@@ -71,7 +77,8 @@ class Client
             return $messages;
         };
 
-        $receiver = function ($message) use (&$modstamps, &$unconfirmedModstamps, &$run, $once, $changeCallback) {
+        $receiver = function ($message) use (&$modstamps, &$unconfirmedModstamps, &$run, $once, $noResponseTimer, $changeCallback) {
+            $this->setupNoResponseTimer($noResponseTimer);
             if (!$message instanceof ReplyModstamp && !$message instanceof SignalModstamp) {
                 return false;
             }
@@ -100,12 +107,6 @@ class Client
             }
             return $ret;
         };
-
-        $noResponseTimer = new Timer();
-        $timer = new Timer();
-        $packetClient = $this->getPacketClient();
-        $socket = $this->getSocket();
-        $this->setupNoResponseTimer($noResponseTimer);
 
         while ($run && !$noResponseTimer->startedAndReached()) {
             $timer->startSec($this->clientConfig->getQueryIntervalSec());
