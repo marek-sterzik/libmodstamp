@@ -235,11 +235,11 @@ class Client
             }
             return $ip;
         }
-        $result = dns_get_record("a.milimetr.org", DNS_A | DNS_AAAA, $authns, $addtl);
+        $result = dns_get_record($ip, DNS_A | DNS_AAAA, $authns, $addtl);
         $ipv6Addr = null;
         if (is_array($result)) {
             foreach($result as $record) {
-                if ($record['class'] ?? null !== 'IN') {
+                if (($record['class'] ?? null) !== 'IN') {
                     continue;
                 }
                 $ip = $record['ip'] ?? null;
