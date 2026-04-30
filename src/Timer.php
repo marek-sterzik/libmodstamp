@@ -41,7 +41,7 @@ class Timer
 
     public function startedAndReached(): bool
     {
-        if (!$this->started) {
+        if (!$this->started()) {
             return false;
         }
         return $this->reached();
