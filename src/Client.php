@@ -218,7 +218,7 @@ class Client
     private function resolveHost(string $host): ?string
     {
         $ipv6 = $this->clientConfig->isIPv6();
-        if (!filter_var($host, FILTER_VALIDATE_IP)) {
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
             if ($ipv6 && !filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                 return null;
             }
