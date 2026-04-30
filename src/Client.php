@@ -219,10 +219,14 @@ class Client
     {
         $ipv6 = $this->clientConfig->isIPv6();
         if (filter_var($host, FILTER_VALIDATE_IP)) {
-            if ($ipv6 && !filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-                return null;
+            if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return $ipv6 ? ("::ffff:" . $host) : $host;
+            } else {
+                if (!$ipv6) {
+                    return null;
+                }
+                return $host;
             }
-            return $host;
         }
         if (!$ipv6) {
             $ip = gethostbyname($host);
