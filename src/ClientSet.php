@@ -14,7 +14,7 @@ class ClientSet
 
         $functions = [];
         foreach ($this->clients as $i => $client) {
-            $functions[] = function() use ($client) {
+            $functions[] = function() use ($client, $modstamps) {
                 return $client->sendModstamps($modstamps);
             };
         }
