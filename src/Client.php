@@ -56,9 +56,11 @@ class Client
         return $confirmedModstamps;
     }
 
-    public function listenForChange(array $modstamps, callable $changeCallback): void
+    public function listenForChange(array $modstamps, callable $changeCallback, bool $once = false): void
     {
         $unconfirmedModstamps = [];
+
+        $run = true;
 
         $sender = function () use (&$unconfirmedModstamps) {
             $messages = [];
@@ -69,7 +71,7 @@ class Client
             return $messages;
         };
 
-        $receiver = function ($message) use (&$modstamps, &$unconfirmedModstamps, $changeCallback) {
+        $receiver = function ($message) use (&$modstamps, &$unconfirmedModstamps, &$run, $once, $changeCallback) {
             if (!$message instanceof ReplyModstamp && !$message instanceof SignalModstamp) {
                 return false;
             }
@@ -90,6 +92,10 @@ class Client
                 }
                 if ($notify) {
                     $changeCallback($modstamp, $modstampValue);
+                    if ($once) {
+                        $run = false;
+                        return true;
+                    }
                 }
             }
             return $ret;
@@ -99,7 +105,7 @@ class Client
         $packetClient = $this->getPacketClient();
         $socket = $this->getSocket();
 
-        while (true) {
+        while ($run) {
             $timer->startSec($this->clientConfig->getQueryIntervalSec());
             $unconfirmedModstamps = array_fill_keys(array_keys($modstamps), true);
             $this->request($sender, $receiver);
