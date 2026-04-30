@@ -235,7 +235,7 @@ class Client
             }
             return $ip;
         }
-        $result = dns_get_record($ip, DNS_A | DNS_AAAA, $authns, $addtl);
+        $result = dns_get_record($host, DNS_A | DNS_AAAA, $authns, $addtl);
         $ipv6Addr = null;
         if (is_array($result)) {
             foreach($result as $record) {
