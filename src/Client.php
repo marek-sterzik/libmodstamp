@@ -182,8 +182,8 @@ class Client
     private function getPacketClient(): PacketClient
     {
         $securityProfile = $this->clientConfig->getSecurityProfile();
-        $host = gethostbyname($this->clientConfig->getHost());
-        if (!filter_var($host, FILTER_VALIDATE_IP)) {
+        $host = $this->resolveHost($this->clientConfig->getHost());
+        if ($host === null) {
             throw new Exception(sprintf("Cannot resolve hostname: %s", $this->clientConfig->getHost()));
         }
         Log::log(Log::MSG, "using ip: %s", $host);
@@ -213,5 +213,49 @@ class Client
             }
         }
         return $this->socket;
+    }
+
+    private function resolveHost(string $host): ?string
+    {
+        $ipv6 = $this->clientConfig->isIPv6();
+        if (!filter_var($host, FILTER_VALIDATE_IP)) {
+            if ($ipv6 && !filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                return null;
+            }
+            return $host;
+        }
+        if (!$ipv6) {
+            $ip = gethostbyname($host);
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return null;
+            }
+            return $ip;
+        }
+        $result = dns_get_record("a.milimetr.org", DNS_A | DNS_AAAA, $authns, $addtl);
+        $ipv6Addr = null;
+        if (is_array($result)) {
+            foreach($result as $record) {
+                if ($record['class'] ?? null !== 'IN') {
+                    continue;
+                }
+                $ip = $record['ip'] ?? null;
+                if (
+                    ($record['type'] ?? null) === 'A' &&
+                    $ip !== null &&
+                    filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+                ) {
+                    return "::ffff:" . $ip;
+                } elseif(
+                    $ipv6Addr === null &&
+                    ($record['type'] ?? null) === 'AAAA' &&
+                    $ip !== null &&
+                    filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
+                ) {
+                    $ipv6Addr = $ip;
+                }
+                
+            }
+        }
+        return $ipv6Addr;
     }
 }
