@@ -10,7 +10,7 @@ class Modstamp implements Validable
 
     public function isValid(): bool
     {
-        return (strlen($this->id) < 256 && preg_match('/^[0-9a-zA-Z_\\-\\.]+$/', $this->id)) ? true : false;
+        return (strlen($this->id) < 256 && preg_match('/^[0-9a-zA-Z_\\-\\.:]+$/', $this->id)) ? true : false;
     }
 
     public function getId(): string
