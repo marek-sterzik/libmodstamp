@@ -50,18 +50,21 @@ class SecurityProfile
         return new self(SecurityProfileChecker::checkSecurityProfile($data));
     }
 
-    public static function loadDefault(): self
+    public static function loadDefault(bool $forClient): self
     {
-        return self::loadFromArray([
-            [
+        $data = [];
+        if (!$forClient) {
+            $data[] = [
                 "encryption" => "plain",
                 "permission" => "rw",
                 "hosts" => ["127.0.0.1", "::"],
-            ], [
-                "encryption" => "plain",
-                "permission" => "ro",
-            ]
-        ]);
+            ];
+        }
+        $data[] = [
+            "encryption" => "plain",
+            "permission" => "ro",
+        ];
+        return self::loadFromArray($data);
     }
 
     private function listEncryptors(): array

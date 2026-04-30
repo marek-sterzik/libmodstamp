@@ -159,7 +159,7 @@ class ServerConfig
 
     public function getSecurityProfile(): SecurityProfile
     {
-        return $this->securityProfile ?? SecurityProfile::loadDefault();
+        return $this->securityProfile ?? SecurityProfile::loadDefault(false);
     }
 
     public function setSecurityProfile(SecurityProfile $securityProfile): self

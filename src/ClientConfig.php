@@ -51,7 +51,7 @@ class ClientConfig
                     try {
                         $this->securityProfile = SecurityProfile::loadFromArray($value);
                     } catch (Exception $e) {
-                        $this->securityProfile = SecurityProfile::loadDefault();
+                        $this->securityProfile = SecurityProfile::loadDefault(true);
                     }
                 }
             }
@@ -159,7 +159,7 @@ class ClientConfig
 
     public function getSecurityProfile(): SecurityProfile
     {
-        return $this->securityProfile ?? SecurityProfile::loadDefault();
+        return $this->securityProfile ?? SecurityProfile::loadDefault(true);
     }
 
     public function setSecurityProfile(SecurityProfile $securityProfile): self
