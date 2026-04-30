@@ -31,9 +31,25 @@ class Timer
         return $this;
     }
 
-    public function getRemainingMiliseconds(): int
+    public function started(): bool
     {
         if ($this->timeoutMicroseconds === null || $this->timeoutSeconds === null) {
+            return false;
+        }
+        return true;
+    }
+
+    public function startedAndReached(): bool
+    {
+        if (!$this->started) {
+            return false;
+        }
+        return $this->reached();
+    }
+
+    public function getRemainingMiliseconds(): int
+    {
+        if (!$this->started()) {
             throw new Exception("timer was not started");
         }
         $data = explode(" ", microtime());

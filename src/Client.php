@@ -56,7 +56,7 @@ class Client
         return $confirmedModstamps;
     }
 
-    public function listenForChange(array $modstamps, callable $changeCallback, bool $once = false): void
+    public function listenForChange(array $modstamps, callable $changeCallback, bool $once = false): bool
     {
         $unconfirmedModstamps = [];
 
@@ -101,23 +101,39 @@ class Client
             return $ret;
         };
 
+        $noResponseTimer = new Timer();
         $timer = new Timer();
         $packetClient = $this->getPacketClient();
         $socket = $this->getSocket();
+        $this->setupNoResponseTimer($noResponseTimer);
 
-        while ($run) {
+        while ($run && !$noResponseTimer->startedAndReached()) {
             $timer->startSec($this->clientConfig->getQueryIntervalSec());
             $unconfirmedModstamps = array_fill_keys(array_keys($modstamps), true);
             $this->request($sender, $receiver);
             while (!$timer->reached()) {
                 $packet = EncryptedPacket::readFromSocket($socket, $timer->getRemainingMiliseconds());
                 if ($packet !== null) {
+                    $this->setupNoResponseTimer($noResponseTimer);
                     $messages = $packetClient->packetToMessages($packet);
                     foreach ($messages as $message) {
                         $receiver($message);
                     }
                 }
             }
+        }
+
+        if ($noResponseTimer->startedAndReached()) {
+            return false;
+        }
+        return true;
+    }
+
+    private function setupNoResponseTimer(Timer $timer): void
+    {
+        $timeout = $this->clientConfig->getNoResponseTimeoutSec();
+        if ($timeout !== null) {
+            $timer->startSec($timeout);
         }
     }
 

@@ -22,6 +22,8 @@ class ClientConfig
 
     private int $queryIntervalSec = 59;
 
+    private ?int $noResponseTimeoutSec = 300;
+
     private int $queryIntervalSecVariance = 2;
 
     private ?SecurityProfile $securityProfile = null;
@@ -42,17 +44,23 @@ class ClientConfig
             if ($key === 'host' || $key === 'port') {
                 continue;
             }
-            if (isset($this->$key)) {
+            if ($key === 'securityProfile') {
+                if (is_array($value)) {
+                    try {
+                        $this->securityProfile = SecurityProfile::loadFromArray($value);
+                    } catch (Exception $e) {
+                        $this->securityProfile = null;
+                    }
+                }
+            } elseif ($key === 'noResponseTimeoutSec') {
+                if (is_int($value) || $value === null) {
+                    $this->noResponseTimeoutSec = ($value !== null && $value > 0) ? $value : null;
+                }
+            } elseif (isset($this->$key)) {
                 if (is_int($this->$key) && is_int($value)) {
                     $this->$key = $value;
                 } elseif (is_bool($this->$key) && is_bool($this->$key)) {
                     $this->$key = $value;
-                } elseif ($key === 'securityProfile' && is_array($value)) {
-                    try {
-                        $this->securityProfile = SecurityProfile::loadFromArray($value);
-                    } catch (Exception $e) {
-                        $this->securityProfile = SecurityProfile::loadDefault(true);
-                    }
                 }
             }
         }
@@ -159,12 +167,29 @@ class ClientConfig
 
     public function getSecurityProfile(): SecurityProfile
     {
-        return $this->securityProfile ?? SecurityProfile::loadDefault(true);
+        if ($this->securityProfile === null) {
+            $this->securityProfile = SecurityProfile::loadDefault(true);
+        }
+        return $this->securityProfile;
     }
 
     public function setSecurityProfile(SecurityProfile $securityProfile): self
     {
         $this->securityProfile = $securityProfile;
         return $this;
+    }
+
+    public function setNoResponseTimeoutSec(?int $noResponseTimeoutSec): self
+    {
+        $this->noResponseTimeoutSec = $noResponseTimeoutSec;
+        return $this;
+    }
+
+    public function getNoResponseTimeoutSec(): ?int
+    {
+        if ($this->noResponseTimeoutSec !== null && $this->noResponseTimeoutSec <= 0) {
+            return null;
+        }
+        return $this->noResponseTimeoutSec;
     }
 }
